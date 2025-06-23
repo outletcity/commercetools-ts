@@ -1,13 +1,10 @@
 import {ctpClient} from "./client";
 
-import {
-    ApiRoot,
-    createApiBuilderFromCtpClient,
-} from '@commercetools/platform-sdk';
+import {createApiBuilderFromCtpClient,} from '@commercetools/platform-sdk';
 
 // Create apiRoot from the imported ClientBuilder and include your Project key
 const apiRoot = createApiBuilderFromCtpClient(ctpClient)
-    .withProjectKey({ projectKey: '{projectKey}' });
+    .withProjectKey({ projectKey: 'ocm' });
 
 // Example call to return Project information
 // This code has the same effect as sending a GET request to the commercetools Composable Commerce API without any endpoints.
@@ -18,7 +15,16 @@ const getProject = () => {
 };
 
 // Retrieve Project information and output the result to the log
-getProject()
+/*getProject()
     .then(console.log)
+    .catch(console.error);*/
+
+// console.log("Retrieving shopping lists...");
+// apiRoot.shoppingLists().get().execute().then(console.log).catch(console.error);
+
+apiRoot.products()
+    .get()
+    .execute()
+    .then(data => {console.dir(data, {depth: null})})
     .catch(console.error);
 
