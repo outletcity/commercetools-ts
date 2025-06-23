@@ -1,0 +1,9 @@
+# Intellij #
+*.iml
+*.logcdh
+gs
+.env
+
+.idea/
+node_modules/
+build/
