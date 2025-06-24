@@ -1,309 +1,216 @@
 import {ctpClient} from "./client";
+import {createApiBuilderFromCtpClient} from '@commercetools/platform-sdk';
 
-import {createApiBuilderFromCtpClient,} from '@commercetools/platform-sdk';
+const apiRoot = createApiBuilderFromCtpClient(ctpClient).withProjectKey({projectKey: 'ocm'});
 
-// Create apiRoot from the imported ClientBuilder and include your Project key
-const apiRoot = createApiBuilderFromCtpClient(ctpClient)
-    .withProjectKey({projectKey: 'ocm'});
+// First, let's create the product type "Shirt"
+/*async function createShirtProductType() {
+    try {
+        const productTypeDraft = {
+            name: "Shirt",
+            description: "Product type for shirt items",
+            attributes: [
+                {
+                    name: "productGroup",
+                    label: {
+                        en: "Product Group"
+                    },
+                    type: {
+                        name: "set",
+                        elementType: {
+                            name: "nested",
+                            typeReference: {
+                                typeId: "product-type",
+                                id: "material-attribute-type" // We'll create this first
+                            }
+                        }
+                    },
+                    attributeConstraint: "None",
+                    isRequired: false,
+                    isSearchable: true
+                }
+            ]
+        };
 
-// Example call to return Project information
-// This code has the same effect as sending a GET request to the commercetools Composable Commerce API without any endpoints.
+        // First create the nested type for materials
 
-const getMaterialTypeId = async () => {
-    const key = "material-information";
-    const existingTypeResponse = await apiRoot.productTypes()
-        .get({queryArgs: {where: `key="${key}"`}})
-        .execute();
 
-    if (existingTypeResponse.body.count > 0) {
-        console.log("Material Type already exists with ID: " + existingTypeResponse.body.results[0].id);
-        return existingTypeResponse.body.results[0].id;
-    }
-    const response = await apiRoot.productTypes()
-        .post({
-            body: {
-                name: "material-information",
-                key: "material-information",
-                description: "The material-information type.",
+        console.log('Creating material attribute type...');
+        const materialType = await apiRoot.productTypes().post({body: {
+                name: "MaterialAttributeType",
+                description: "Nested type for material attributes",
                 attributes: [
                     {
-                        name: "material",
-                        type: {name: "ltext"},
-                        isRequired: true,
+                        name: "materialName",
+                        label: {
+                            en: "Material Name"
+                        },
+                        type: {
+                            name: "text"
+                        },
                         attributeConstraint: "None",
-                        isSearchable: false,
-                        label: {"de": "Material"}
+                        isRequired: true,
+                        isSearchable: true
                     },
                     {
                         name: "fraction",
-                        type: {name: "number"},
-                        isRequired: false,
+                        label: {
+                            en: "Fraction"
+                        },
+                        type: {
+                            name: "number"
+                        },
                         attributeConstraint: "None",
-                        isSearchable: false,
-                        label: {"de": "Fraktion"}
+                        isRequired: true,
+                        isSearchable: false
                     },
                     {
                         name: "unit",
+                        label: {
+                            en: "Unit"
+                        },
                         type: {
-                            name: "lenum", values: [
-                                {
-                                    key: "kg",
-                                    label: {"de": "Kilogramm"}
-                                },
-                                {
-                                    key: "g",
-                                    label: {"de": "Gramm"}
-                                },
-                                {
-                                    key: "mg",
-                                    label: {"de": "Milligramm"}
-                                },
-                                {
-                                    key: "l",
-                                    label: {"de": "Liter"}
-                                },
-                                {
-                                    key: "ml",
-                                    label: {"de": "Milliliter"}
-                                },
-                                {
-                                    key: "%",
-                                    label: {"de": "Prozent"}
-                                }
+                            name: "enum",
+                            values: [
+                                {key: "percent", label: "%"},
+                                {key: "gram", label: "g"},
+                                {key: "kilogram", label: "kg"},
+                                {key: "liter", label: "l"},
+                                {key: "milliliter", label: "ml"}
                             ]
                         },
-                        isRequired: true,
                         attributeConstraint: "None",
-                        isSearchable: false,
-                        label: {"de": "Einheit"}
-                    },
+                        isRequired: true,
+                        isSearchable: true
+                    }
                 ]
-            }
-        })
-        .execute();
+            }}).execute();
+        console.log('Material attribute type created:', materialType.body.id);
 
-    let id = response.body.id;
-    console.log("Material Type ID: " + id);
-    return id;
-}
+        // Now create the main product type with reference to the material type
 
-async function declareTypes() {
-    const materialTypeId = await getMaterialTypeId();
-    const materialGroupType = apiRoot.productTypes()
-        .post({
-            body: {
-                name: "material-group-information",
-                key: "material-group-information",
-                description: "The material-group-information type.",
+        console.log('Creating Shirt product type...');
+        const productType = await apiRoot.productTypes().post({body: {
+                ...productTypeDraft,
                 attributes: [
                     {
-                        name: "groupName",
-                        type: {name: "ltext"},
-                        isRequired: true,
-                        attributeConstraint: "None",
-                        isSearchable: false,
-                        label: {"de": "Material Gruppe"}
-                    },
-                    {
-                        name: "materials",
+                        name: "Obermaterial",
+                        label: {
+                            en: "Obermaterial"
+                        },
                         type: {
                             name: "set",
                             elementType: {
                                 name: "nested",
                                 typeReference: {
-                                    id: materialTypeId,
-                                    typeId: "product-type"
+                                    typeId: "product-type",
+                                    id: materialType.body.id
                                 }
                             }
                         },
-                        isRequired: false,
                         attributeConstraint: "None",
-                        isSearchable: false,
-                        label: {"de": "Materialien"}
-                    }
-
-                ]
-            }
-        })
-        .execute()
-        .then(function ({body}) {
-            console.log(JSON.stringify(body));
-        });
-}
-
-const updateProductType = async (key: string, version: number) => {
-    const response = await apiRoot
-        .productTypes()
-        .withKey({key: key})
-        .post({
-            body: {
-                version: version,
-                actions: [
+                        isRequired: false,
+                        isSearchable: true
+                    },
                     {
-                        action: "addAttributeDefinition",
-                        attribute: {
-                            name: "materialGroup",
-                            type: {
+                        name: "Futter",
+                        label: {
+                            en: "Futter"
+                        },
+                        type: {
+                            name: "set",
+                            elementType: {
                                 name: "nested",
                                 typeReference: {
-                                    id: '4cc58314-141f-494e-bcd2-f427a0fac300',
-                                    typeId: "product-type"
+                                    typeId: "product-type",
+                                    id: materialType.body.id
                                 }
-                            },
-                            isRequired: true,
-                            attributeConstraint: "None",
-                            isSearchable: false,
-                            label: {"de": "Material"}
-                        }
+                            }
+                        },
+                        attributeConstraint: "None",
+                        isRequired: false,
+                        isSearchable: true
                     }
                 ]
-            }
-        })
-        .execute();
-    return response.body;
-};
-
-const createProductWithCorrectMaterialGroup = async () => {
-    try {
-        const productTypeResponse = await apiRoot.productTypes()
-            .get({queryArgs: {where: `key="base-product"`}})
-            .execute();
-
-        const productTypeId = productTypeResponse.body.results[0].id;
-
-        // Create product with correct material-group-information structure
-        const productResponse = await apiRoot.products()
-            .post({
-                body: {
-                    productType: {
-                        id: productTypeId,
-                        typeId: "product-type"
-                    },
-                    name: {
-                        "en": "Product with Correct Material Group",
-                        "de": "Produkt mit korrekter Materialgruppe"
-                    },
-                    slug: {
-                        "en": "correct-material-group-" + Date.now(),
-                        "de": "korrekte-materialgruppe-" + Date.now()
-                    },
-                    masterVariant: {
-                        sku: "CORRECT-MAT-" + Date.now(),
-                        attributes: [
-                            {
-                                name: "materialGroup",
-                                value: {
-                                    // These are the fields from material-group-information type
-                                    name: {
-                                        "en": "Material Group Name",
-                                        "de": "Materialgruppen-Name"
-                                    },
-                                    groupName: {
-                                        "en": "Textile Materials",
-                                        "de": "Textilmaterialien"
-                                    },
-                                    materials: [
-                                        {
-                                            // These are the fields from material-information type
-                                            material: {
-                                                "en": "Upper - Polyamide",
-                                                "de": "Obermaterial - Polyamid"
-                                            },
-                                            unit: "%" // This is required and must be one of the enum values
-                                            // fraction is optional, so we can skip it
-                                        },
-                                        {
-                                            material: {
-                                                "en": "Lining - Cotton",
-                                                "de": "Futter - Baumwolle"
-                                            },
-                                            fraction: 85,
-                                            unit: "%"
-                                        }
-                                    ]
-                                }
-                            }
-                        ]
-                    }
-                }
-            })
-            .execute();
-
-        console.log("Product with correct material group created successfully!");
-        console.log("Product ID:", productResponse.body.id);
-
-        // Let's see the created structure
-        const masterVariant = productResponse.body.masterData.current.masterVariant;
-        const materialGroupAttr = masterVariant.attributes?.find(attr => attr.name === 'materialGroup');
-        console.log("Created materialGroup structure:", JSON.stringify(materialGroupAttr?.value, null, 2));
-
-        return productResponse.body;
-
+            }}).execute();
+        console.log('Shirt product type created successfully:', productType.body.id);
+        
+        return productType.body;
     } catch (error) {
-        console.error("Error creating product with correct material group:", error);
+        console.error('Error creating product type:', error);
+        throw error;
+    }
+}*/
+
+// Create a test product with the specified values
+async function createTestProduct(productTypeId: string) {
+    try {
+        console.log('Creating test product...');
+        const product = await apiRoot.products().post({body: {
+                name: {
+                    en: "Test Shirt"
+                },
+                productType: {
+                    typeId: "product-type",
+                    id: productTypeId
+                },
+                slug: {
+                    en: "test-shirt"
+                },
+                masterVariant: {
+                    sku: "TEST-SHIRT-001",
+                    attributes: [
+                        {
+                            name: "Obermaterial",
+                            value: [
+                                {
+                                    materialName: "Polyamid",
+                                    fraction: 100,
+                                    unit: "percent"
+                                }
+                            ]
+                        },
+                        {
+                            name: "Futter",
+                            value: [
+                                {
+                                    materialName: "Polyamid",
+                                    fraction: 100,
+                                    unit: "percent"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                variants: []
+            }}).execute();
+        console.log('Test product created successfully:', product.body.id);
+        
+        return product.body;
+    } catch (error) {
+        console.error('Error creating test product:', error);
         throw error;
     }
 }
 
-// Let's also try with minimal required fields only
-const createProductWithMinimalMaterialGroup = async () => {
+// Main execution function
+async function main() {
     try {
-        const productTypeResponse = await apiRoot.productTypes()
-            .get({queryArgs: {where: `key="base-product"`}})
-            .execute();
-
-        const productTypeId = productTypeResponse.body.results[0].id;
-
-        const productResponse = await apiRoot.products()
-            .post({
-                body: {
-                    productType: {
-                        id: "4cc58314-141f-494e-bcd2-f427a0fac300", // material-group-information type ID
-                        typeId: "product-type"
-                    },
-                    name: {
-                        "en": "Direct Material Group Product",
-                        "de": "Direktes Materialgruppen-Produkt"
-                    },
-                    slug: {
-                        "en": "direct-material-group-" + Date.now(),
-                        "de": "direktes-materialgruppe-" + Date.now()
-                    },
-                    masterVariant: {
-                        sku: "DIRECT-MAT-" + Date.now(),
-                        attributes: [
-                            {
-                                name: "name",
-                                value: {
-                                    "en": "Material Group Info",
-                                    "de": "Materialgruppen-Info"
-                                }
-                            },
-                            {
-                                name: "groupName",
-                                value: {
-                                    "en": "Textile Materials",
-                                    "de": "Textilmaterialien"
-                                }
-                            }
-                        ]
-                    }
-                }
-            })
-            .execute();
-
-
-        console.log("Minimal material group product created successfully!");
-        console.log("Product ID:", productResponse.body.id);
-
-        return productResponse.body;
-
+        console.log('Starting product type and product creation...');
+        
+        // Create the product type
+        // const productType = await createShirtProductType();
+        
+        // Create the test product
+        const product = await createTestProduct('0cb0707f-7077-47bb-8500-7a495d5b295c');
+        
+        console.log('All operations completed successfully!');
+        console.log('Product ID:', product.id);
+        
     } catch (error) {
-        console.error("Error creating minimal material group product:", error);
-        throw error;
+        console.error('Main execution error:', error);
     }
 }
 
-
-createProductWithMinimalMaterialGroup();
-// createProductWithCorrectMaterialGroup();
+// Run the main function
+main().catch(console.error);
