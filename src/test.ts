@@ -164,7 +164,6 @@ async function createTestProduct(productTypeId: string) {
                             name: "Obermaterial",
                             value: [
                                 {
-                                    // Nested attribute values need to be wrapped in an attributes array
                                     attributes: [
                                         {
                                             name: "materialName",
@@ -176,10 +175,7 @@ async function createTestProduct(productTypeId: string) {
                                         },
                                         {
                                             name: "unit",
-                                            value: {
-                                                key: "percent",
-                                                label: "%"
-                                            }
+                                            value: "percent"  // Just the key, not the full object
                                         }
                                     ]
                                 }
@@ -189,7 +185,6 @@ async function createTestProduct(productTypeId: string) {
                             name: "Futter",
                             value: [
                                 {
-                                    // Same structure for Futter
                                     attributes: [
                                         {
                                             name: "materialName",
@@ -201,10 +196,7 @@ async function createTestProduct(productTypeId: string) {
                                         },
                                         {
                                             name: "unit",
-                                            value: {
-                                                key: "percent",
-                                                label: "%"
-                                            }
+                                            value: "percent"  // Just the key, not the full object
                                         }
                                     ]
                                 }
