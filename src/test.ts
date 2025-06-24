@@ -1,10 +1,12 @@
 import {ctpClient} from "./client";
 import {createApiBuilderFromCtpClient} from '@commercetools/platform-sdk';
+import {MATERIAL} from "./typeDeclarations/material";
+import {UNIT} from "./typeDeclarations/unit";
 
 const apiRoot = createApiBuilderFromCtpClient(ctpClient).withProjectKey({projectKey: 'ocm'});
 
 // First, let's create the product type "Shirt"
-/*async function createShirtProductType() {
+async function createShirtProductType() {
     try {
         const productTypeDraft = {
             name: "Shirt",
@@ -36,7 +38,8 @@ const apiRoot = createApiBuilderFromCtpClient(ctpClient).withProjectKey({project
 
 
         console.log('Creating material attribute type...');
-        const materialType = await apiRoot.productTypes().post({body: {
+        const materialType = await apiRoot.productTypes().post({
+            body: {
                 name: "MaterialAttributeType",
                 description: "Nested type for material attributes",
                 attributes: [
@@ -45,13 +48,12 @@ const apiRoot = createApiBuilderFromCtpClient(ctpClient).withProjectKey({project
                         label: {
                             en: "Material Name"
                         },
-                        type: {
-                            name: "text"
-                        },
+                        type: MATERIAL,
                         attributeConstraint: "None",
                         isRequired: true,
                         isSearchable: true
-                    },
+                    }
+                    ,
                     {
                         name: "fraction",
                         label: {
@@ -69,34 +71,28 @@ const apiRoot = createApiBuilderFromCtpClient(ctpClient).withProjectKey({project
                         label: {
                             en: "Unit"
                         },
-                        type: {
-                            name: "enum",
-                            values: [
-                                {key: "percent", label: "%"},
-                                {key: "gram", label: "g"},
-                                {key: "kilogram", label: "kg"},
-                                {key: "liter", label: "l"},
-                                {key: "milliliter", label: "ml"}
-                            ]
-                        },
+                        type: UNIT,
                         attributeConstraint: "None",
                         isRequired: true,
                         isSearchable: true
                     }
                 ]
-            }}).execute();
+            }
+        }).execute();
         console.log('Material attribute type created:', materialType.body.id);
 
         // Now create the main product type with reference to the material type
 
         console.log('Creating Shirt product type...');
-        const productType = await apiRoot.productTypes().post({body: {
+        const productType = await apiRoot.productTypes().post({
+            body: {
                 ...productTypeDraft,
                 attributes: [
                     {
                         name: "Obermaterial",
                         label: {
-                            en: "Obermaterial"
+                            en: "Upper Material",
+                            de: "Obermaterial"
                         },
                         type: {
                             name: "set",
@@ -113,9 +109,10 @@ const apiRoot = createApiBuilderFromCtpClient(ctpClient).withProjectKey({project
                         isSearchable: true
                     },
                     {
-                        name: "Futter",
+                        name: "Futter1",
                         label: {
-                            en: "Futter"
+                            en: "Lining",
+                            de: "Futter"
                         },
                         type: {
                             name: "set",
@@ -132,21 +129,23 @@ const apiRoot = createApiBuilderFromCtpClient(ctpClient).withProjectKey({project
                         isSearchable: true
                     }
                 ]
-            }}).execute();
+            }
+        }).execute();
         console.log('Shirt product type created successfully:', productType.body.id);
-        
+
         return productType.body;
     } catch (error) {
         console.error('Error creating product type:', error);
         throw error;
     }
-}*/
+}
 
 // Create a test product with the specified values
 async function createTestProduct(productTypeId: string) {
     try {
         console.log('Creating test product...');
-        const product = await apiRoot.products().post({body: {
+        const product = await apiRoot.products().post({
+            body: {
                 name: {
                     en: "Test Shirt"
                 },
@@ -166,11 +165,25 @@ async function createTestProduct(productTypeId: string) {
                                 [
                                     {
                                         name: "materialName",
-                                        value: "Polyamid"
+                                        value: "KAMEL"
                                     },
                                     {
-                                        name: "fraction", 
-                                        value: 100
+                                        name: "fraction",
+                                        value: 50
+                                    },
+                                    {
+                                        name: "unit",
+                                        value: "percent"
+                                    }
+                                ],
+                                [
+                                    {
+                                        name: "materialName",
+                                        value: "KASCHGORA"
+                                    },
+                                    {
+                                        name: "fraction",
+                                        value: 50
                                     },
                                     {
                                         name: "unit",
@@ -180,19 +193,19 @@ async function createTestProduct(productTypeId: string) {
                             ]
                         },
                         {
-                            name: "Futter",
+                            name: "Futter1",
                             value: [
                                 [
                                     {
                                         name: "materialName",
-                                        value: "Polyamid"
+                                        value: "BIBER"
                                     },
                                     {
                                         name: "fraction",
                                         value: 100
                                     },
                                     {
-                                        name: "unit", 
+                                        name: "unit",
                                         value: "percent"
                                     }
                                 ]
@@ -201,9 +214,10 @@ async function createTestProduct(productTypeId: string) {
                     ]
                 },
                 variants: []
-            }}).execute();
+            }
+        }).execute();
         console.log('Test product created successfully:', product.body.id);
-        
+
         return product.body;
     } catch (error) {
         console.error('Error creating test product:', error);
@@ -215,16 +229,16 @@ async function createTestProduct(productTypeId: string) {
 async function main() {
     try {
         console.log('Starting product type and product creation...');
-        
+
         // Create the product type
         // const productType = await createShirtProductType();
-        
+
         // Create the test product
-        const product = await createTestProduct('0cb0707f-7077-47bb-8500-7a495d5b295c');
-        
+        const product = await createTestProduct('0421da7e-db7a-432c-ab5e-3192c955ce3b');
+
         console.log('All operations completed successfully!');
-        console.log('Product ID:', product.id);
-        
+        // console.log('Product ID:', product.id);
+
     } catch (error) {
         console.error('Main execution error:', error);
     }
@@ -232,3 +246,4 @@ async function main() {
 
 // Run the main function
 main().catch(console.error);
+
