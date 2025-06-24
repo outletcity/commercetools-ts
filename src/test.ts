@@ -164,20 +164,10 @@ async function createTestProduct(productTypeId: string) {
                             name: "Obermaterial",
                             value: [
                                 {
-                                    attributes: [
-                                        {
-                                            name: "materialName",
-                                            value: "Polyamid"
-                                        },
-                                        {
-                                            name: "fraction",
-                                            value: 100
-                                        },
-                                        {
-                                            name: "unit",
-                                            value: "percent"  // Just the key, not the full object
-                                        }
-                                    ]
+                                    // Direct attribute values, not wrapped in "attributes"
+                                    materialName: "Polyamid",
+                                    fraction: 100,
+                                    unit: "percent"
                                 }
                             ]
                         },
@@ -185,20 +175,10 @@ async function createTestProduct(productTypeId: string) {
                             name: "Futter",
                             value: [
                                 {
-                                    attributes: [
-                                        {
-                                            name: "materialName",
-                                            value: "Polyamid"
-                                        },
-                                        {
-                                            name: "fraction",
-                                            value: 100
-                                        },
-                                        {
-                                            name: "unit",
-                                            value: "percent"  // Just the key, not the full object
-                                        }
-                                    ]
+                                    // Direct attribute values, not wrapped in "attributes"
+                                    materialName: "Polyamid",
+                                    fraction: 100,
+                                    unit: "percent"
                                 }
                             ]
                         }
