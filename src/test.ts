@@ -1,7 +1,9 @@
 import {ctpClient} from "./client";
 import {createApiBuilderFromCtpClient} from '@commercetools/platform-sdk';
-import {MATERIAL} from "./typeDeclarations/material";
 import {UNIT} from "./typeDeclarations/unit";
+import {MATERIAL_LINING_FEATURE} from "./typeDeclarations/materialLining";
+import {MATERIAL_FILLING_FEATURE} from "./typeDeclarations/materialFilling";
+import {MATERIAL_OUTER_FABRIC_FEATURE} from "./typeDeclarations/materialOuterFabric";
 
 const apiRoot = createApiBuilderFromCtpClient(ctpClient).withProjectKey({projectKey: 'ocm'});
 
@@ -44,16 +46,32 @@ async function createShirtProductType() {
                 description: "Nested type for material attributes",
                 attributes: [
                     {
-                        name: "materialName",
-                        label: {
-                            en: "Material Name"
-                        },
-                        type: MATERIAL,
+                        name: "material-outer-fabric-1",
+                        label: { de: "Obermaterial 1", en: "Outer Fabric 1" },
+                        isRequired: false,
+                        name: "material-outer-fabric",
+                        label: { de: "Obermaterial", en: "Outer Fabric" },
+                        isRequired: false,
+                        type: MATERIAL_OUTER_FABRIC_FEATURE,
                         attributeConstraint: "None",
-                        isRequired: true,
                         isSearchable: true
-                    }
-                    ,
+                    },
+                    {
+                        name: "material-lining",
+                        label: { de: "Futtermaterial", en: "Lining Material" },
+                        isRequired: false,
+                        type: MATERIAL_LINING_FEATURE,
+                        attributeConstraint: "None",
+                        isSearchable: true
+                    },
+                    {
+                        name: "material-filling",
+                        label: { de: "Füllmaterial", en: "Filling Material" },
+                        isRequired: false,
+                        type: MATERIAL_FILLING_FEATURE,
+                        attributeConstraint: "None",
+                        isSearchable: true
+                    },
                     {
                         name: "fraction",
                         label: {
