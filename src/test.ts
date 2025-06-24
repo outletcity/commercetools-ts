@@ -164,9 +164,24 @@ async function createTestProduct(productTypeId: string) {
                             name: "Obermaterial",
                             value: [
                                 {
-                                    materialName: "Polyamid",
-                                    fraction: 100,
-                                    unit: "percent"
+                                    // Nested attribute values need to be wrapped in an attributes array
+                                    attributes: [
+                                        {
+                                            name: "materialName",
+                                            value: "Polyamid"
+                                        },
+                                        {
+                                            name: "fraction",
+                                            value: 100
+                                        },
+                                        {
+                                            name: "unit",
+                                            value: {
+                                                key: "percent",
+                                                label: "%"
+                                            }
+                                        }
+                                    ]
                                 }
                             ]
                         },
@@ -174,9 +189,24 @@ async function createTestProduct(productTypeId: string) {
                             name: "Futter",
                             value: [
                                 {
-                                    materialName: "Polyamid",
-                                    fraction: 100,
-                                    unit: "percent"
+                                    // Same structure for Futter
+                                    attributes: [
+                                        {
+                                            name: "materialName",
+                                            value: "Polyamid"
+                                        },
+                                        {
+                                            name: "fraction",
+                                            value: 100
+                                        },
+                                        {
+                                            name: "unit",
+                                            value: {
+                                                key: "percent",
+                                                label: "%"
+                                            }
+                                        }
+                                    ]
                                 }
                             ]
                         }
