@@ -1,9 +1,9 @@
 import {ctpClient} from "./client";
 import {createApiBuilderFromCtpClient} from '@commercetools/platform-sdk';
-import {UNIT} from "./typeDeclarations/unit";
-import {MATERIAL_LINING_FEATURE} from "./typeDeclarations/materialLining";
-import {MATERIAL_FILLING_FEATURE} from "./typeDeclarations/materialFilling";
-import {MATERIAL_OUTER_FABRIC_FEATURE} from "./typeDeclarations/materialOuterFabric";
+import {createAllMaterialTypes} from "./material_type_creation_service";
+import {outerFabricKeys} from "./typeDeclarations/materialOuterFabric";
+import {MATERIAL_VALUES} from "./typeDeclarations/materialValues";
+import {fetchProductBySku} from "./fetchProductBySkuService";
 
 const apiRoot = createApiBuilderFromCtpClient(ctpClient).withProjectKey({projectKey: 'ocm'});
 
@@ -40,65 +40,7 @@ async function createShirtProductType() {
 
 
         console.log('Creating material attribute type...');
-        const materialType = await apiRoot.productTypes().post({
-            body: {
-                name: "MaterialAttributeType",
-                description: "Nested type for material attributes",
-                attributes: [
-                    {
-                        name: "material-outer-fabric-1",
-                        label: { de: "Obermaterial 1", en: "Outer Fabric 1" },
-                        isRequired: false,
-                        name: "material-outer-fabric",
-                        label: { de: "Obermaterial", en: "Outer Fabric" },
-                        isRequired: false,
-                        type: MATERIAL_OUTER_FABRIC_FEATURE,
-                        attributeConstraint: "None",
-                        isSearchable: true
-                    },
-                    {
-                        name: "material-lining",
-                        label: { de: "Futtermaterial", en: "Lining Material" },
-                        isRequired: false,
-                        type: MATERIAL_LINING_FEATURE,
-                        attributeConstraint: "None",
-                        isSearchable: true
-                    },
-                    {
-                        name: "material-filling",
-                        label: { de: "Füllmaterial", en: "Filling Material" },
-                        isRequired: false,
-                        type: MATERIAL_FILLING_FEATURE,
-                        attributeConstraint: "None",
-                        isSearchable: true
-                    },
-                    {
-                        name: "fraction",
-                        label: {
-                            en: "Fraction"
-                        },
-                        type: {
-                            name: "number"
-                        },
-                        attributeConstraint: "None",
-                        isRequired: true,
-                        isSearchable: false
-                    },
-                    {
-                        name: "unit",
-                        label: {
-                            en: "Unit"
-                        },
-                        type: UNIT,
-                        attributeConstraint: "None",
-                        isRequired: true,
-                        isSearchable: true
-                    }
-                ]
-            }
-        }).execute();
-        console.log('Material attribute type created:', materialType.body.id);
-
+        let typeIds = await createAllMaterialTypes();
         // Now create the main product type with reference to the material type
 
         console.log('Creating Shirt product type...');
@@ -107,7 +49,7 @@ async function createShirtProductType() {
                 ...productTypeDraft,
                 attributes: [
                     {
-                        name: "Obermaterial",
+                        name: "outer-fabric1",
                         label: {
                             en: "Upper Material",
                             de: "Obermaterial"
@@ -118,7 +60,7 @@ async function createShirtProductType() {
                                 name: "nested",
                                 typeReference: {
                                     typeId: "product-type",
-                                    id: materialType.body.id
+                                    id: typeIds.outerFabricType.id
                                 }
                             }
                         },
@@ -127,7 +69,67 @@ async function createShirtProductType() {
                         isSearchable: true
                     },
                     {
-                        name: "Futter1",
+                        name: "outer-fabric2",
+                        label: {
+                            en: "Upper Material",
+                            de: "Obermaterial"
+                        },
+                        type: {
+                            name: "set",
+                            elementType: {
+                                name: "nested",
+                                typeReference: {
+                                    typeId: "product-type",
+                                    id: typeIds.outerFabricType.id
+                                }
+                            }
+                        },
+                        attributeConstraint: "None",
+                        isRequired: false,
+                        isSearchable: true
+                    },
+                    {
+                        name: "outer-fabric3",
+                        label: {
+                            en: "Upper Material",
+                            de: "Obermaterial"
+                        },
+                        type: {
+                            name: "set",
+                            elementType: {
+                                name: "nested",
+                                typeReference: {
+                                    typeId: "product-type",
+                                    id: typeIds.outerFabricType.id
+                                }
+                            }
+                        },
+                        attributeConstraint: "None",
+                        isRequired: false,
+                        isSearchable: true
+                    },
+                    {
+                        name: "outer-fabric4",
+                        label: {
+                            en: "Upper Material",
+                            de: "Obermaterial"
+                        },
+                        type: {
+                            name: "set",
+                            elementType: {
+                                name: "nested",
+                                typeReference: {
+                                    typeId: "product-type",
+                                    id: typeIds.outerFabricType.id
+                                }
+                            }
+                        },
+                        attributeConstraint: "None",
+                        isRequired: false,
+                        isSearchable: true
+                    },
+                    {
+                        name: "lining1",
                         label: {
                             en: "Lining",
                             de: "Futter"
@@ -138,7 +140,87 @@ async function createShirtProductType() {
                                 name: "nested",
                                 typeReference: {
                                     typeId: "product-type",
-                                    id: materialType.body.id
+                                    id: typeIds.liningMaterialType.id
+                                }
+                            }
+                        },
+                        attributeConstraint: "None",
+                        isRequired: false,
+                        isSearchable: true
+                    },
+                    {
+                        name: "lining2",
+                        label: {
+                            en: "Lining",
+                            de: "Futter"
+                        },
+                        type: {
+                            name: "set",
+                            elementType: {
+                                name: "nested",
+                                typeReference: {
+                                    typeId: "product-type",
+                                    id: typeIds.liningMaterialType.id
+                                }
+                            }
+                        },
+                        attributeConstraint: "None",
+                        isRequired: false,
+                        isSearchable: true
+                    },
+                    {
+                        name: "lining3",
+                        label: {
+                            en: "Lining",
+                            de: "Futter"
+                        },
+                        type: {
+                            name: "set",
+                            elementType: {
+                                name: "nested",
+                                typeReference: {
+                                    typeId: "product-type",
+                                    id: typeIds.liningMaterialType.id
+                                }
+                            }
+                        },
+                        attributeConstraint: "None",
+                        isRequired: false,
+                        isSearchable: true
+                    },
+                    {
+                        name: "filling1",
+                        label: {
+                            en: "Filling",
+                            de: "Füllung"
+                        },
+                        type: {
+                            name: "set",
+                            elementType: {
+                                name: "nested",
+                                typeReference: {
+                                    typeId: "product-type",
+                                    id: typeIds.fillingMaterialType.id
+                                }
+                            }
+                        },
+                        attributeConstraint: "None",
+                        isRequired: false,
+                        isSearchable: true
+                    },
+                    {
+                        name: "filling2",
+                        label: {
+                            en: "Filling",
+                            de: "Füllung"
+                        },
+                        type: {
+                            name: "set",
+                            elementType: {
+                                name: "nested",
+                                typeReference: {
+                                    typeId: "product-type",
+                                    id: typeIds.fillingMaterialType.id
                                 }
                             }
                         },
@@ -159,7 +241,7 @@ async function createShirtProductType() {
 }
 
 // Create a test product with the specified values
-async function createTestProduct(productTypeId: string) {
+async function createTestProduct(productTypeId: string, slug: string = "test-shirt") {
     try {
         console.log('Creating test product...');
         const product = await apiRoot.products().post({
@@ -172,18 +254,18 @@ async function createTestProduct(productTypeId: string) {
                     id: productTypeId
                 },
                 slug: {
-                    en: "test-shirt"
+                    en: slug
                 },
                 masterVariant: {
-                    sku: "TEST-SHIRT-001",
+                    sku: slug,
                     attributes: [
                         {
-                            name: "Obermaterial",
+                            name: "outer-fabric1",
                             value: [
                                 [
                                     {
-                                        name: "materialName",
-                                        value: "KAMEL"
+                                        name: "material",
+                                        value: MATERIAL_VALUES.KAMEL.key
                                     },
                                     {
                                         name: "fraction",
@@ -196,8 +278,8 @@ async function createTestProduct(productTypeId: string) {
                                 ],
                                 [
                                     {
-                                        name: "materialName",
-                                        value: "KASCHGORA"
+                                        name: "material",
+                                        value: MATERIAL_VALUES.KASCHGORA.key
                                     },
                                     {
                                         name: "fraction",
@@ -211,11 +293,31 @@ async function createTestProduct(productTypeId: string) {
                             ]
                         },
                         {
-                            name: "Futter1",
+                            name: "outer-fabric2",
                             value: [
                                 [
                                     {
-                                        name: "materialName",
+                                        name: "material",
+                                        value: MATERIAL_VALUES.HENEQUEN.key
+                                    },
+                                    {
+                                        name: "fraction",
+                                        value: 100
+                                    },
+                                    {
+                                        name: "unit",
+                                        value: "percent"
+                                    }
+                                ]
+                            ]
+                        },
+
+                        {
+                            name: "lining1",
+                            value: [
+                                [
+                                    {
+                                        name: "material",
                                         value: "BIBER"
                                     },
                                     {
@@ -244,18 +346,43 @@ async function createTestProduct(productTypeId: string) {
 }
 
 // Main execution function
+async function createClothingAttributeGroups() {
+    try {
+        // 1. Material Information Group
+        const materialGroup = await apiRoot.attributeGroups().post({
+            body: {
+                name: {
+                    en: "Material Information",
+                    de: "Materialinformationen"
+                },
+                description: {
+                    en: "All attributes related to materials and fabric composition",
+                    de: "Alle Attribute zu Materialien und Stoffzusammensetzung"
+                },
+                attributes: [
+                    {
+                        key: "Obermaterial",
+                    },
+                    {
+                        key: "Futter1",
+
+                    }
+                ]
+            }
+        }).execute();
+
+        console.log('Material group created:', materialGroup.body.id);
+    }
+    catch (error) {
+        console.error('Error creating clothing attribute groups:', error);
+        throw error;
+    }
+}
+
 async function main() {
     try {
-        console.log('Starting product type and product creation...');
-
-        // Create the product type
-        // const productType = await createShirtProductType();
-
-        // Create the test product
-        const product = await createTestProduct('0421da7e-db7a-432c-ab5e-3192c955ce3b');
-
-        console.log('All operations completed successfully!');
-        // console.log('Product ID:', product.id);
+        // createTestProduct('fc1396ad-2fb5-452a-bf9f-7a3c7e611f82', 'test-shirt-002');
+       fetchProductBySku('test-shirt-002');
 
     } catch (error) {
         console.error('Main execution error:', error);
@@ -264,4 +391,6 @@ async function main() {
 
 // Run the main function
 main().catch(console.error);
+
+
 

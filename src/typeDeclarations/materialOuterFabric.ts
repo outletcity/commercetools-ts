@@ -2,7 +2,7 @@
 import { AttributeType } from "@commercetools/platform-sdk/dist/declarations/src/generated/models/product-type";
 import { MATERIAL_VALUES } from "./materialValues";
 
-const outerFabricKeys = [
+export const outerFabricKeys = [
     "BAMBUS", "TIERHAAR", "ASBEST", "RINDERHAAR", "ZIEGENHAAR", "PFERDEHAAR",
     "VISKOSE-RECYCELT", "POLYBUTYLENTEREPHTHALAT", "ELASTHAN-RECYCELT",
     "SCHURWOLLE-RECYCELT", "ACETAT", "ALFA", "ALGINAT", "ALPAKA", "ANDERE-FASERN",

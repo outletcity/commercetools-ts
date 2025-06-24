@@ -1,0 +1,283 @@
+{
+  "id": "47180879-a3c3-41aa-a404-82e94073d0a5",
+  "version": 1,
+  "versionModifiedAt": "2025-06-24T13:41:28.519Z",
+  "lastMessageSequenceNumber": 1,
+  "createdAt": "2025-06-24T13:41:28.519Z",
+  "lastModifiedAt": "2025-06-24T13:41:28.519Z",
+  "lastModifiedBy": {
+    "clientId": "t8BSmo9gS3Ahrt2agC2T254C",
+    "isPlatformClient": false
+  },
+  "createdBy": {
+    "clientId": "t8BSmo9gS3Ahrt2agC2T254C",
+    "isPlatformClient": false
+  },
+  "productType": {
+    "typeId": "product-type",
+    "id": "fc1396ad-2fb5-452a-bf9f-7a3c7e611f82"
+  },
+  "masterData": {
+    "current": {
+      "name": {
+        "en": "Test Shirt"
+      },
+      "categories": [],
+      "categoryOrderHints": {},
+      "slug": {
+        "en": "test-shirt-002"
+      },
+      "masterVariant": {
+        "id": 1,
+        "sku": "test-shirt-002",
+        "prices": [],
+        "images": [],
+        "attributes": [
+          {
+            "name": "outer-fabric1",
+            "value": [
+              [
+                {
+                  "name": "material",
+                  "value": {
+                    "key": "KAMEL",
+                    "label": {
+                      "de": "Kamel",
+                      "en": "Camel"
+                    }
+                  }
+                },
+                {
+                  "name": "fraction",
+                  "value": 50
+                },
+                {
+                  "name": "unit",
+                  "value": {
+                    "key": "percent",
+                    "label": "%"
+                  }
+                }
+              ],
+              [
+                {
+                  "name": "material",
+                  "value": {
+                    "key": "KASCHGORA",
+                    "label": {
+                      "de": "Kaschgora",
+                      "en": "Kashgora"
+                    }
+                  }
+                },
+                {
+                  "name": "fraction",
+                  "value": 50
+                },
+                {
+                  "name": "unit",
+                  "value": {
+                    "key": "percent",
+                    "label": "%"
+                  }
+                }
+              ]
+            ]
+          },
+          {
+            "name": "outer-fabric2",
+            "value": [
+              [
+                {
+                  "name": "material",
+                  "value": {
+                    "key": "HENEQUEN",
+                    "label": {
+                      "de": "Henequen",
+                      "en": "Henequen"
+                    }
+                  }
+                },
+                {
+                  "name": "fraction",
+                  "value": 100
+                },
+                {
+                  "name": "unit",
+                  "value": {
+                    "key": "percent",
+                    "label": "%"
+                  }
+                }
+              ]
+            ]
+          },
+          {
+            "name": "lining1",
+            "value": [
+              [
+                {
+                  "name": "material",
+                  "value": {
+                    "key": "BIBER",
+                    "label": {
+                      "de": "Biber",
+                      "en": "Beaver"
+                    }
+                  }
+                },
+                {
+                  "name": "fraction",
+                  "value": 100
+                },
+                {
+                  "name": "unit",
+                  "value": {
+                    "key": "percent",
+                    "label": "%"
+                  }
+                }
+              ]
+            ]
+          }
+        ],
+        "assets": []
+      },
+      "variants": [],
+      "searchKeywords": {},
+      "attributes": []
+    },
+    "staged": {
+      "name": {
+        "en": "Test Shirt"
+      },
+      "categories": [],
+      "categoryOrderHints": {},
+      "slug": {
+        "en": "test-shirt-002"
+      },
+      "masterVariant": {
+        "id": 1,
+        "sku": "test-shirt-002",
+        "prices": [],
+        "images": [],
+        "attributes": [
+          {
+            "name": "outer-fabric1",
+            "value": [
+              [
+                {
+                  "name": "material",
+                  "value": {
+                    "key": "KAMEL",
+                    "label": {
+                      "de": "Kamel",
+                      "en": "Camel"
+                    }
+                  }
+                },
+                {
+                  "name": "fraction",
+                  "value": 50
+                },
+                {
+                  "name": "unit",
+                  "value": {
+                    "key": "percent",
+                    "label": "%"
+                  }
+                }
+              ],
+              [
+                {
+                  "name": "material",
+                  "value": {
+                    "key": "KASCHGORA",
+                    "label": {
+                      "de": "Kaschgora",
+                      "en": "Kashgora"
+                    }
+                  }
+                },
+                {
+                  "name": "fraction",
+                  "value": 50
+                },
+                {
+                  "name": "unit",
+                  "value": {
+                    "key": "percent",
+                    "label": "%"
+                  }
+                }
+              ]
+            ]
+          },
+          {
+            "name": "outer-fabric2",
+            "value": [
+              [
+                {
+                  "name": "material",
+                  "value": {
+                    "key": "HENEQUEN",
+                    "label": {
+                      "de": "Henequen",
+                      "en": "Henequen"
+                    }
+                  }
+                },
+                {
+                  "name": "fraction",
+                  "value": 100
+                },
+                {
+                  "name": "unit",
+                  "value": {
+                    "key": "percent",
+                    "label": "%"
+                  }
+                }
+              ]
+            ]
+          },
+          {
+            "name": "lining1",
+            "value": [
+              [
+                {
+                  "name": "material",
+                  "value": {
+                    "key": "BIBER",
+                    "label": {
+                      "de": "Biber",
+                      "en": "Beaver"
+                    }
+                  }
+                },
+                {
+                  "name": "fraction",
+                  "value": 100
+                },
+                {
+                  "name": "unit",
+                  "value": {
+                    "key": "percent",
+                    "label": "%"
+                  }
+                }
+              ]
+            ]
+          }
+        ],
+        "assets": []
+      },
+      "variants": [],
+      "searchKeywords": {},
+      "attributes": []
+    },
+    "published": false,
+    "hasStagedChanges": false
+  },
+  "lastVariantId": 1
+}
