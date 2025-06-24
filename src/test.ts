@@ -163,23 +163,39 @@ async function createTestProduct(productTypeId: string) {
                         {
                             name: "Obermaterial",
                             value: [
-                                {
-                                    // Direct attribute values, not wrapped in "attributes"
-                                    materialName: "Polyamid",
-                                    fraction: 100,
-                                    unit: "percent"
-                                }
+                                [
+                                    {
+                                        name: "materialName",
+                                        value: "Polyamid"
+                                    },
+                                    {
+                                        name: "fraction", 
+                                        value: 100
+                                    },
+                                    {
+                                        name: "unit",
+                                        value: "percent"
+                                    }
+                                ]
                             ]
                         },
                         {
                             name: "Futter",
                             value: [
-                                {
-                                    // Direct attribute values, not wrapped in "attributes"
-                                    materialName: "Polyamid",
-                                    fraction: 100,
-                                    unit: "percent"
-                                }
+                                [
+                                    {
+                                        name: "materialName",
+                                        value: "Polyamid"
+                                    },
+                                    {
+                                        name: "fraction",
+                                        value: 100
+                                    },
+                                    {
+                                        name: "unit", 
+                                        value: "percent"
+                                    }
+                                ]
                             ]
                         }
                     ]
