@@ -7,3 +7,4 @@ gs
 .idea/
 node_modules/
 build/
+/src/vue-app/dist/**

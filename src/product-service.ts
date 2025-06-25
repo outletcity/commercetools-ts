@@ -19,253 +19,216 @@ export class ProductService {
             {
                 name: "outer-fabric1",
                 value: [
-                    [
-                        {
-                            name: "material",
-                            value: MATERIAL_VALUES.KAMEL.key
-                        },
-                        {
-                            name: "fraction",
-                            value: 50
-                        },
-                        {
-                            name: "unit",
-                            value: "percent"
-                        }
-                    ],
-                    [
-                        {
-                            name: "material",
-                            value: MATERIAL_VALUES.KASCHGORA.key
-                        },
-                        {
-                            name: "fraction",
-                            value: 50
-                        },
-                        {
-                            name: "unit",
-                            value: "percent"
-                        }
-                    ]
+                    {
+                        material: MATERIAL_VALUES.KAMEL.key,
+                        fraction: 50,
+                        unit: "percent"
+                    },
+                    {
+                        material: MATERIAL_VALUES.KASCHGORA.key,
+                        fraction: 50,
+                        unit: "percent"
+                    }
                 ]
             },
             {
                 name: "outer-fabric2",
                 value: [
-                    [
-                        {
-                            name: "material",
-                            value: MATERIAL_VALUES.HENEQUEN.key
-                        },
-                        {
-                            name: "fraction",
-                            value: 100
-                        },
-                        {
-                            name: "unit",
-                            value: "percent"
-                        }
-                    ]
+                    {
+                        material: MATERIAL_VALUES.HENEQUEN.key,
+                        fraction: 100,
+                        unit: "percent"
+                    }
                 ]
             },
             {
                 name: "lining1",
                 value: [
-                    [
-                        {
-                            name: "material",
-                            value: "BIBER"
-                        },
-                        {
-                            name: "fraction",
-                            value: 100
-                        },
-                        {
-                            name: "unit",
-                            value: "percent"
-                        }
-                    ]
+                    {
+                        material: "BIBER",
+                        fraction: 100,
+                        unit: "percent"
+                    }
                 ]
             },
             {
                 name: "product-benefit",
                 value: [
-                    [
-                        {
-                            name: "code",
-                            value: "water-resistant"
+                    {
+                        code: "water-resistant",
+                        name: {
+                            "en": "Water Resistant",
+                            "de": "Wasserabweisend"
                         },
-                        {
-                            name: "name",
-                            value: {
-                                "en": "Water Resistant",
-                                "de": "Wasserabweisend"
-                            }
-                        },
-                        {
-                            name: "imageUrl",
-                            value: "https://example.com/images/water-resistant.png"
-                        }
-                    ]
+                        imageUrl: "https://example.com/images/water-resistant.png"
+                    }
                 ]
             }
         ];
     }
 
-    //add brandname to the method
-    async createTestProduct(styleCode: string = "test-shirt", name: string = "Test shirt", brandName: string = "Test Brand") {
-        try {
-            console.log('Creating test product...');
-            const product = await apiRoot.products().post({
-                body: {
-                    name: {
-                        en: name,
-                    },
-                    productType: {
-                        typeId: "product-type",
-                        id: this.productTypeId
-                    },
-                    key: styleCode,
-                    slug: {
-                        en: styleCode
-                    },
-                    masterVariant: {
-                        images: [
-                            {
-                                url: "https://outletcity.freetls.fastly.net/medias/sys_master/noidx/noidx/h34/hdc/9820870737950/4058213070309-br-1280x1920-1.jpg?width=382",
-                                dimensions: {
-                                    w: 382,
-                                    h: 573
-                                }
-                            }
-                        ],
-                        sku: styleCode + "-1",
-                        attributes: [
-                            ...this.getCommonAttributes(brandName),
-                            {
-                                name: "size",
-                                value: "L"
-                            },
-                            {
-                                name: "color",
-                                value: "blue"
-                            },
-                            {
-                                name: "display-color",
-                                value: {
-                                    "en": "Blue",
-                                    "de": "Blau"
-                                }
-                            }
-                        ],
-                        prices: [
-                            {
-                                value: {
-                                    currencyCode: "EUR",
-                                    centAmount: 1999,
-                                },
-                            }
-                        ],
-                    },
-                    variants: [
-                        {
-                            sku: styleCode + "-2",
-                            attributes: [
-                                ...this.getCommonAttributes(brandName),
-                                {
-                                    name: "size",
-                                    value: "M"
-                                },
-                                {
-                                    name: "color",
-                                    value: "red"
-                                },
-                                {
-                                    name: "display-color",
-                                    value: {
-                                        "en": "Red",
-                                        "de": "Rot"
-                                    }
-                                },
-                            ],
-                            prices: [
-                                {
-                                    value: {
-                                        currencyCode: "EUR",
-                                        centAmount: 2999
-                                    }
-                                }
-                            ],
-                        },
-                        {
-                            sku: styleCode + "-3",
-                            attributes: [
-                                ...this.getCommonAttributes(brandName),
-                                {
-                                    name: "size",
-                                    value: "L"
-                                },
-                                {
-                                    name: "color",
-                                    value: "red"
-                                },
-                                {
-                                    name: "display-color",
-                                    value: {
-                                        "en": "Red",
-                                        "de": "Rot"
-                                    }
-                                },
-                            ],
-                            prices: [
-                                {
-                                    value: {
-                                        currencyCode: "EUR",
-                                        centAmount: 2999
-                                    }
-                                }
-                            ],
-                        },
-                        {
-                            sku: styleCode + "-4",
-                            attributes: [
-                                ...this.getCommonAttributes(brandName),
-                                {
-                                    name: "size",
-                                    value: "XL"
-                                },
-                                {
-                                    name: "color",
-                                    value: "red"
-                                },
-                                {
-                                    name: "display-color",
-                                    value: {
-                                        "en": "Red",
-                                        "de": "Rot"
-                                    }
-                                },
+    // Simplified version for testing
+    getSimpleAttributes(brandName: string = "Test Brand") {
+        return [
+            {
+                name: "brand-name",
+                value: brandName
+            }
+        ];
+    }
 
-                            ],
-                            prices: [
-                                {
-                                    value: {
-                                        currencyCode: "EUR",
-                                        centAmount: 2999
-                                    }
-                                }
-                            ],
+    // Alternative simplified product creation method for debugging
+    async createSimpleProduct(
+        styleCode: string,
+        name: string,
+        brandName: string = "Test Brand",
+        categoryIds: string[] = []
+    ) {
+        try {
+            console.log('Creating simple product...');
+
+            const categories = categoryIds.map(id => ({
+                typeId: "category" as const,
+                id: id
+            }));
+
+            const simpleProductData = {
+                name: {
+                    en: name
+                },
+                productType: {
+                    typeId: "product-type" as const,
+                    id: this.productTypeId
+                },
+                key: styleCode,
+                slug: {
+                    en: styleCode
+                },
+                masterVariant: {
+                    sku: `${styleCode}-simple`,
+                    attributes: [
+                        {
+                            name: "brand-name",
+                            value: brandName
+                        },
+                        {
+                            name: "size",
+                            value: "M"
+                        },
+                        {
+                            name: "color",
+                            value: "blue"
+                        },
+                        {
+                            name: "display-color",
+                            value: {
+                                en: "Blue"
+                            }
+                        }
+                    ],
+                    prices: [
+                        {
+                            value: {
+                                currencyCode: "EUR",
+                                centAmount: 1999
+                            }
                         }
                     ]
-                }
-            }).execute();
-            console.log('Test product created successfully:', product.body.id);
+                },
+                ...(categories.length > 0 && { categories })
+            };
 
+            const product = await apiRoot.products().post({
+                body: simpleProductData
+            }).execute();
+
+            console.log('Simple product created successfully:', product.body.id);
             return product.body;
         } catch (error) {
+            console.error('Error creating simple product:', error);
             console.dir(error, {depth: null});
             throw error;
         }
     }
 
+    async addProductToCategories(productId: string, categoryIds: string[]) {
+        try {
+            // First get the current product to get its version
+            const currentProduct = await apiRoot.products().withId({ ID: productId }).get().execute();
+
+            // Add categories one by one
+            let product = currentProduct.body;
+            for (const categoryId of categoryIds) {
+                try {
+                    const result = await apiRoot.products().withId({ ID: productId }).post({
+                        body: {
+                            version: product.version,
+                            actions: [
+                                {
+                                    action: "addToCategory",
+                                    category: {
+                                        typeId: "category" as const,
+                                        id: categoryId
+                                    }
+                                }
+                            ]
+                        }
+                    }).execute();
+                    product = result.body;
+                    console.log(`Added product to category ${categoryId}`);
+                } catch (error) {
+                    console.error(`Error adding product to category ${categoryId}:`, error);
+                }
+            }
+
+            console.log('Product added to categories successfully');
+            return product;
+        } catch (error) {
+            console.error('Error adding product to categories:', error);
+            throw error;
+        }
+    }
+
+    async removeProductFromCategory(productId: string, categoryId: string) {
+        try {
+            // Get current product version
+            const currentProduct = await apiRoot.products().withId({ ID: productId }).get().execute();
+
+            const updatedProduct = await apiRoot.products().withId({ ID: productId }).post({
+                body: {
+                    version: currentProduct.body.version,
+                    actions: [
+                        {
+                            action: "removeFromCategory",
+                            category: {
+                                typeId: "category" as const,
+                                id: categoryId
+                            }
+                        }
+                    ]
+                }
+            }).execute();
+
+            console.log('Product removed from category successfully');
+            return updatedProduct.body;
+        } catch (error) {
+            console.error('Error removing product from category:', error);
+            throw error;
+        }
+    }
+
+    async getProductsByCategory(categoryId: string) {
+        try {
+            const products = await apiRoot.productProjections().search().get({
+                queryArgs: {
+                    filter: [`categories.id:"${categoryId}"`]
+                }
+            }).execute();
+
+            return products.body.results;
+        } catch (error) {
+            console.error('Error fetching products by category:', error);
+            throw error;
+        }
+    }
 }

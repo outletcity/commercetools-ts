@@ -1,3 +1,4 @@
+
 const express = require('express');
 const path = require('path');
 const { fetchProductBySku } = require('./dist/services/fetchProductBySkuService.js');
@@ -43,6 +44,84 @@ app.get('/api/products', async (req, res) => {
     res.json(products);
   } catch (error) {
     console.error('Error in API endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// API endpoint to fetch all categories
+app.get('/api/categories', async (req, res) => {
+  try {
+    console.log('API request received for all categories');
+
+    const { CategoryService } = require('./dist/services/category_service.js');
+    const categoryService = new CategoryService();
+
+    const categories = await categoryService.getAllCategories();
+
+    res.json(categories);
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// API endpoint to fetch products by category
+app.get('/api/products/category/:categoryId', async (req, res) => {
+  try {
+    const categoryId = req.params.categoryId;
+
+    if (!categoryId) {
+      return res.status(400).json({ error: 'Category ID parameter is required' });
+    }
+
+    console.log(`API request received for products in category: ${categoryId}`);
+
+    const { ProductService } = require('./dist/services/product-service.js');
+    // You'll need to provide a valid product type ID here
+    const productService = new ProductService("3e3f5ac3-6cb4-4b93-a259-82422706df61");
+
+    const products = await productService.getProductsByCategory(categoryId);
+
+    res.json(products);
+  } catch (error) {
+    console.error('Error fetching products by category:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// API endpoint to fetch products by category key (alternative)
+app.get('/api/products/category-key/:categoryKey', async (req, res) => {
+  try {
+    const categoryKey = req.params.categoryKey;
+
+    if (!categoryKey) {
+      return res.status(400).json({ error: 'Category key parameter is required' });
+    }
+
+    console.log(`API request received for products in category key: ${categoryKey}`);
+
+    const { CategoryService } = require('./dist/services/category_service.js');
+    const { ProductService } = require('./dist/services/product-service.js');
+
+    const categoryService = new CategoryService();
+    const productService = new ProductService("3e3f5ac3-6cb4-4b93-a259-82422706df61");
+
+    // First get the category by key to get its ID
+    const category = await categoryService.getCategoryByKey(categoryKey);
+
+    if (!category) {
+      return res.status(404).json({ error: `No category found with key: ${categoryKey}` });
+    }
+
+    // Then get products in that category
+    const products = await productService.getProductsByCategory(category.id);
+
+    res.json({
+      category: category,
+      products: products
+    });
+  } catch (error) {
+    console.error('Error fetching products by category key:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
