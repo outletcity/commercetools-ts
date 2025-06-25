@@ -1,3 +1,4 @@
+
 <template>
   <div id="app">
     <!-- Product List View -->
@@ -45,14 +46,11 @@
             <h3 class="product-name">
               {{ product.name.en || product.name[Object.keys(product.name)[0]] }}
             </h3>
+            <div class="product-brand" v-if="getProductBrand(product)">
+              {{ getProductBrand(product) }}
+            </div>
             <div class="product-price" v-if="getProductPrice(product)">
               {{ formatPrice(getProductPrice(product)) }}
-            </div>
-            <div class="product-attributes">
-              <div v-for="attribute in getMasterVariantAttributes(product)" :key="attribute.name" class="attribute-item">
-                <span class="attribute-name">{{ attribute.name }}:</span>
-                <span class="attribute-value">{{ formatAttributeValue(attribute.value) }}</span>
-              </div>
             </div>
           </div>
         </div>
@@ -110,21 +108,26 @@
           <div class="selected-variant-details" v-if="selectedVariant">
             <h3>Selected Variant Details</h3>
 
-            <div class="variant-sku">
-              <strong>SKU:</strong> {{ selectedVariant.sku || 'N/A' }}
-            </div>
-
-            <div class="variant-price" v-if="getVariantPrice(selectedVariant)">
-              <strong>Price:</strong> {{ formatPrice(getVariantPrice(selectedVariant)) }}
-            </div>
-
-            <div class="variant-attributes" v-if="selectedVariant.attributes && selectedVariant.attributes.length > 0">
-              <h4>Attributes</h4>
-              <div class="attribute-list">
-                <div v-for="attribute in selectedVariant.attributes" :key="attribute.name" class="attribute-item">
-                  <strong>{{ attribute.name }}:</strong> {{ formatAttributeValue(attribute.value) }}
-                </div>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">SKU:</span>
+                <span class="detail-value">{{ selectedVariant.sku || 'N/A' }}</span>
               </div>
+
+              <div class="detail-item" v-if="getVariantPrice(selectedVariant)">
+                <span class="detail-label">Price:</span>
+                <span class="detail-value price">{{ formatPrice(getVariantPrice(selectedVariant)) }}</span>
+              </div>
+
+              <!-- Structured Attributes -->
+              <template v-for="attribute in getStructuredAttributes(selectedVariant.attributes)" :key="attribute.name">
+                <div class="detail-item">
+                  <span class="detail-label">{{ formatAttributeName(attribute.name) }}:</span>
+                  <span class="detail-value" :class="getAttributeClass(attribute.name)">
+                    {{ attribute.displayValue }}
+                  </span>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -132,21 +135,26 @@
           <div class="master-variant-details" v-else>
             <h3>Product Details</h3>
 
-            <div class="product-detail-price" v-if="getProductPrice(selectedProduct)">
-              <strong>Price:</strong> {{ formatPrice(getProductPrice(selectedProduct)) }}
-            </div>
-
-            <div class="product-detail-sku">
-              <strong>SKU:</strong> {{ selectedProduct.masterVariant.sku || 'N/A' }}
-            </div>
-
-            <div class="product-attributes" v-if="selectedProduct.masterVariant.attributes && selectedProduct.masterVariant.attributes.length > 0">
-              <h4>Attributes</h4>
-              <div class="attribute-list">
-                <div v-for="attribute in selectedProduct.masterVariant.attributes" :key="attribute.name" class="attribute-item">
-                  <strong>{{ attribute.name }}:</strong> {{ formatAttributeValue(attribute.value) }}
-                </div>
+            <div class="detail-grid">
+              <div class="detail-item" v-if="getProductPrice(selectedProduct)">
+                <span class="detail-label">Price:</span>
+                <span class="detail-value price">{{ formatPrice(getProductPrice(selectedProduct)) }}</span>
               </div>
+
+              <div class="detail-item">
+                <span class="detail-label">SKU:</span>
+                <span class="detail-value">{{ selectedProduct.masterVariant.sku || 'N/A' }}</span>
+              </div>
+
+              <!-- Structured Attributes -->
+              <template v-for="attribute in getStructuredAttributes(selectedProduct.masterVariant.attributes)" :key="attribute.name">
+                <div class="detail-item">
+                  <span class="detail-label">{{ formatAttributeName(attribute.name) }}:</span>
+                  <span class="detail-value" :class="getAttributeClass(attribute.name)">
+                    {{ attribute.displayValue }}
+                  </span>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -207,8 +215,9 @@ export default {
       this.filteredProducts = this.products.filter(product => {
         const name = (product.name.en || product.name[Object.keys(product.name)[0]] || '').toLowerCase();
         const sku = (product.masterVariant.sku || '').toLowerCase();
+        const brand = (this.getProductBrand(product) || '').toLowerCase();
 
-        return name.includes(query) || sku.includes(query);
+        return name.includes(query) || sku.includes(query) || brand.includes(query);
       });
     },
 
@@ -256,6 +265,49 @@ export default {
         return variant.prices[0];
       }
       return null;
+    },
+
+    getProductBrand(product) {
+      if (!product.masterVariant.attributes) return null;
+
+      const brandAttribute = product.masterVariant.attributes.find(attr =>
+          attr.name.toLowerCase().includes('brand') ||
+          attr.name.toLowerCase().includes('manufacturer')
+      );
+
+      if (brandAttribute) {
+        return this.formatAttributeValue(brandAttribute.value);
+      }
+
+      return null;
+    },
+
+    getStructuredAttributes(attributes) {
+      if (!attributes || !Array.isArray(attributes)) return [];
+
+      return attributes.map(attr => ({
+        name: attr.name,
+        displayValue: this.formatAttributeValue(attr.value),
+        rawValue: attr.value
+      })).filter(attr => attr.displayValue && attr.displayValue !== '');
+    },
+
+    formatAttributeName(name) {
+      // Convert camelCase/snake_case to readable format
+      return name
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase())
+          .trim();
+    },
+
+    getAttributeClass(attributeName) {
+      const name = attributeName.toLowerCase();
+      if (name.includes('color') || name.includes('colour')) return 'color-value';
+      if (name.includes('size')) return 'size-value';
+      if (name.includes('material')) return 'material-value';
+      if (name.includes('brand')) return 'brand-value';
+      return '';
     },
 
     getMasterVariantAttributes(product) {
@@ -339,14 +391,70 @@ export default {
     formatAttributeValue(value) {
       if (!value) return '';
 
+      // Handle different value types
+      if (typeof value === 'string') {
+        return value;
+      }
+
+      if (typeof value === 'number' || typeof value === 'boolean') {
+        return String(value);
+      }
+
       if (typeof value === 'object') {
+        // Handle localized text objects
         if (value.label) {
-          return value.label.en || value.label[Object.keys(value.label)[0]] || value.key || '';
+          if (typeof value.label === 'object') {
+            return value.label.en || value.label[Object.keys(value.label)[0]] || value.key || '';
+          }
+          return value.label;
         }
+
+        // Handle key-value objects
+        if (value.key) {
+          return value.key;
+        }
+
+        // Handle arrays
         if (Array.isArray(value)) {
-          return value.map(item => this.formatAttributeValue(item)).join(', ');
+          return value.map(item => this.formatAttributeValue(item)).filter(v => v).join(', ');
         }
-        return JSON.stringify(value);
+
+        // Handle date objects
+        if (value instanceof Date) {
+          return value.toLocaleDateString();
+        }
+
+        // Handle objects with specific known structures
+        if (value.centAmount && value.currencyCode) {
+          // This is a money object
+          const amount = value.centAmount / 100;
+          return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: value.currencyCode
+          }).format(amount);
+        }
+
+        // Handle reference objects
+        if (value.typeId && value.id) {
+          return `${value.typeId}: ${value.id}`;
+        }
+
+        // For other objects, try to extract meaningful info
+        if (value.name) {
+          return typeof value.name === 'object'
+              ? value.name.en || value.name[Object.keys(value.name)[0]] || ''
+              : value.name;
+        }
+
+        // Last resort - show key-value pairs for simple objects
+        const entries = Object.entries(value);
+        if (entries.length <= 3) {
+          return entries
+              .map(([k, v]) => `${k}: ${this.formatAttributeValue(v)}`)
+              .join(', ');
+        }
+
+        return 'Complex value';
       }
 
       return String(value);
@@ -447,41 +555,28 @@ h1 {
   flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 
 .product-name {
   font-size: 20px;
   font-weight: 600;
-  margin: 0 0 12px 0;
+  margin: 0;
   color: #333;
   line-height: 1.3;
+}
+
+.product-brand {
+  font-size: 16px;
+  color: #666;
+  font-weight: 500;
 }
 
 .product-price {
   font-size: 18px;
   font-weight: 600;
   color: #007bff;
-  margin-bottom: 16px;
-}
-
-.product-attributes {
-  flex: 1;
-}
-
-.product-attributes .attribute-item {
-  margin-bottom: 8px;
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.attribute-name {
-  font-weight: 500;
-  color: #555;
-}
-
-.attribute-value {
-  color: #777;
-  margin-left: 4px;
+  margin-top: auto;
 }
 
 /* Product Detail Styles */
@@ -575,7 +670,7 @@ h1 {
   color: white;
 }
 
-/* Variant Details */
+/* Structured Detail Grid */
 .selected-variant-details,
 .master-variant-details {
   margin-bottom: 20px;
@@ -585,36 +680,67 @@ h1 {
   background-color: #f9f9f9;
 }
 
-.variant-sku,
-.product-detail-sku {
-  margin-bottom: 12px;
-  font-size: 16px;
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
-.variant-price,
-.product-detail-price {
-  font-size: 20px;
+.detail-item {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e0e0e0;
+  align-items: center;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #555;
+  font-size: 14px;
+}
+
+.detail-value {
+  color: #333;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.detail-value.price {
+  font-size: 18px;
   font-weight: 600;
   color: #007bff;
-  margin-bottom: 16px;
 }
 
-.variant-attributes h4,
-.product-attributes h4 {
-  margin: 16px 0 12px 0;
-  color: #333;
-}
-
-.attribute-list {
-  margin-bottom: 16px;
-}
-
-.attribute-list .attribute-item {
-  margin-bottom: 8px;
-  padding: 8px;
-  background-color: white;
+.detail-value.color-value {
+  padding: 4px 8px;
+  background-color: #e7f3ff;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.detail-value.size-value {
+  padding: 4px 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.detail-value.material-value {
+  font-style: italic;
+  color: #666;
+}
+
+.detail-value.brand-value {
+  font-weight: 500;
+  color: #007bff;
 }
 
 .product-detail-description {
