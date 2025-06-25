@@ -14,6 +14,7 @@ async function createOuterFabricType() {
         const outerFabricType = await apiRoot.productTypes().post({
             body: {
                 name: "OuterFabricType",
+                key: "outerFabricType",
                 description: "Type for outer fabric material attributes",
                 attributes: [
                     {
@@ -64,6 +65,7 @@ async function createLiningMaterialType() {
         const liningMaterialType = await apiRoot.productTypes().post({
             body: {
                 name: "LiningMaterialType",
+                key: "liningMaterialType",
                 description: "Type for lining material attributes",
                 attributes: [
                     {
@@ -114,6 +116,7 @@ async function createFillingMaterialType() {
         const fillingMaterialType = await apiRoot.productTypes().post({
             body: {
                 name: "FillingMaterialType",
+                key: "fillingMaterialType",
                 description: "Type for filling material attributes",
                 attributes: [
                     {

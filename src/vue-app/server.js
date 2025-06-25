@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const { fetchProductBySku } = require('./dist/services/fetchProductBySkuService.js');
-
+const { fetchAllPublishedProducts } = require('./dist/services/fetchProductBySkuService.js');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,20 +13,34 @@ app.use(express.static(path.join(__dirname, 'dist')));
 app.get('/api/product', async (req, res) => {
   try {
     const sku = req.query.sku;
-    
+
     if (!sku) {
       return res.status(400).json({ error: 'SKU parameter is required' });
     }
-    
+
     console.log(`API request received for SKU: ${sku}`);
-    
+
     const product = await fetchProductBySku(sku);
-    
+
     if (!product) {
       return res.status(404).json({ error: `No product found with SKU: ${sku}` });
     }
-    
+
     res.json(product);
+  } catch (error) {
+    console.error('Error in API endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// API endpoint to fetch all published products
+app.get('/api/products', async (req, res) => {
+  try {
+    console.log('API request received for all published products');
+
+    const products = await fetchAllPublishedProducts();
+
+    res.json(products);
   } catch (error) {
     console.error('Error in API endpoint:', error);
     res.status(500).json({ error: 'Internal server error' });
