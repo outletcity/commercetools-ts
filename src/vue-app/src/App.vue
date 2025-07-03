@@ -1,17 +1,42 @@
 
 <template>
   <div id="app">
-    <CategoryProductView />
+    <ProductDetail v-if="isProductDetailView" />
+    <CategoryProductView v-else />
   </div>
 </template>
 
 <script>
 import CategoryProductView from './components/CategoryProductView.vue'
+import ProductDetail from './components/ProductDetail.vue'
 
 export default {
   name: 'App',
   components: {
-    CategoryProductView
+    CategoryProductView,
+    ProductDetail
+  },
+  data() {
+    return {
+      isProductDetailView: false
+    }
+  },
+  mounted() {
+    // Check if we're on a product detail page
+    this.checkRoute();
+
+    // Listen for URL changes
+    window.addEventListener('popstate', this.checkRoute);
+  },
+  beforeUnmount() {
+    window.removeEventListener('popstate', this.checkRoute);
+  },
+  methods: {
+    checkRoute() {
+      // Check if the URL has a product parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      this.isProductDetailView = urlParams.has('sku');
+    }
   }
 }
 </script>

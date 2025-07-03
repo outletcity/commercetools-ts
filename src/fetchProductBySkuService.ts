@@ -4,6 +4,35 @@ import { createApiBuilderFromCtpClient } from '@commercetools/platform-sdk';
 
 const apiRoot = createApiBuilderFromCtpClient(ctpClient).withProjectKey({projectKey: 'ocm'});
 
+export async function fetchProductBySku(sku: string) {
+    try {
+        console.log(`Fetching product by SKU: ${sku}`);
+
+        const response = await apiRoot
+            .productProjections()
+            .search()
+            .get({
+                queryArgs: {
+                    filter: [`variants.sku:"${sku}"`],
+                    staged: false // Get published products only
+                }
+            })
+            .execute();
+
+        if (response.body.results.length === 0) {
+            console.log(`No product found with SKU: ${sku}`);
+            return null;
+        }
+
+        const product = response.body.results[0];
+        console.log(`Found product: ${product.name?.en || 'Unnamed product'}`);
+        return product;
+    } catch (error) {
+        console.error('Error fetching product by SKU:', error);
+        throw error;
+    }
+}
+
 export async function fetchStyleByKey(productKey: string) {
     try {
         console.log(`Fetching all variants for product ID: ${productKey}`);

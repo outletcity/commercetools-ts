@@ -1,8 +1,20 @@
-
 const express = require('express');
 const path = require('path');
-const { fetchProductBySku } = require('./dist/services/fetchProductBySkuService.js');
-const { fetchAllPublishedProducts } = require('./dist/services/fetchProductBySkuService.js');
+
+// Enable TypeScript support
+require('ts-node').register({
+  transpileOnly: true,
+  compilerOptions: {
+    module: 'commonjs',
+    target: 'es2020',
+    esModuleInterop: true,
+    allowSyntheticDefaultImports: true,
+    moduleResolution: 'node'
+  }
+});
+
+// Now require the TypeScript files directly (corrected path)
+const { fetchProductBySku, fetchAllPublishedProducts } = require('../fetchProductBySkuService.ts');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -53,7 +65,7 @@ app.get('/api/categories', async (req, res) => {
   try {
     console.log('API request received for all categories');
 
-    const { CategoryService } = require('./dist/services/category_service.js');
+    const { CategoryService } = require('../category_service.ts');
     const categoryService = new CategoryService();
 
     const categories = await categoryService.getAllCategories();
@@ -76,7 +88,7 @@ app.get('/api/products/category/:categoryId', async (req, res) => {
 
     console.log(`API request received for products in category: ${categoryId}`);
 
-    const { ProductService } = require('./dist/services/product-service.js');
+    const { ProductService } = require('../product-service.ts');
     // You'll need to provide a valid product type ID here
     const productService = new ProductService("3e3f5ac3-6cb4-4b93-a259-82422706df61");
 
@@ -100,8 +112,8 @@ app.get('/api/products/category-key/:categoryKey', async (req, res) => {
 
     console.log(`API request received for products in category key: ${categoryKey}`);
 
-    const { CategoryService } = require('./dist/services/category_service.js');
-    const { ProductService } = require('./dist/services/product-service.js');
+    const { CategoryService } = require('../category_service.ts');
+    const { ProductService } = require('../product-service.ts');
 
     const categoryService = new CategoryService();
     const productService = new ProductService("3e3f5ac3-6cb4-4b93-a259-82422706df61");

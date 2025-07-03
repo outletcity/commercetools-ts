@@ -20,17 +20,35 @@
           Loading categories...
         </div>
 
-        <!-- Categories List -->
-        <div v-else-if="categories.length > 0" class="categories-list">
+        <!-- Categories Tree -->
+        <div v-else-if="categoryTree.length > 0" class="categories-list">
           <div
-              v-for="category in categories"
-              :key="category.id"
+            v-for="category in categoryTree"
+            :key="category.id"
+            class="category-tree-item"
+          >
+            <div 
               class="category-item"
               :class="{ active: selectedCategory?.id === category.id }"
               @click="selectCategory(category)"
-          >
-            <span class="category-name">{{ getCategoryName(category) }}</span>
-            <span class="product-count">({{ getCategoryProductCount(category.id) }})</span>
+            >
+              <span class="category-name">{{ getCategoryName(category) }}</span>
+              <span class="product-count">({{ getCategoryProductCount(category.id) }})</span>
+            </div>
+
+            <!-- Render children recursively -->
+            <div v-if="category.children && category.children.length > 0" class="category-children">
+              <div
+                v-for="child in category.children"
+                :key="child.id"
+                class="category-item child-category"
+                :class="{ active: selectedCategory?.id === child.id }"
+                @click.stop="selectCategory(child)"
+              >
+                <span class="category-name">{{ getCategoryName(child) }}</span>
+                <span class="product-count">({{ getCategoryProductCount(child.id) }})</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -42,6 +60,17 @@
 
       <!-- Main Content - Products -->
       <div class="main-content">
+        <!-- Search Bar -->
+        <div class="search-container">
+          <input 
+            type="text" 
+            v-model="searchQuery" 
+            placeholder="Search products..." 
+            class="search-input"
+            @input="searchProducts"
+          />
+        </div>
+
         <div class="content-header">
           <h1 class="page-title">
             {{ selectedCategory ? getCategoryName(selectedCategory) : 'All Products' }}
@@ -62,6 +91,7 @@
               v-for="product in filteredProducts"
               :key="product.id"
               class="product-card"
+              @click="viewProductDetails(product)"
           >
             <div class="product-image">
               <!-- Placeholder image - replace with actual product images if available -->
@@ -110,12 +140,14 @@ export default {
   data() {
     return {
       categories: [],
+      categoryTree: [],
       allProducts: [],
       filteredProducts: [],
       selectedCategory: null,
       categoriesLoading: false,
       productsLoading: false,
-      categoryProductCounts: {}
+      categoryProductCounts: {},
+      searchQuery: ''
     }
   },
 
@@ -128,6 +160,7 @@ export default {
   async mounted() {
     await this.loadCategories();
     await this.loadAllProducts();
+    this.buildCategoryTree();
   },
 
   methods: {
@@ -202,6 +235,9 @@ export default {
     async selectCategory(category) {
       this.selectedCategory = category;
       this.productsLoading = true;
+
+      // Reset search query when changing categories
+      this.searchQuery = '';
 
       try {
         if (category === null) {
@@ -297,6 +333,93 @@ export default {
     getProductInitials(product) {
       const name = this.getProductName(product);
       return name.split(' ').map(word => word.charAt(0)).join('').slice(0, 2).toUpperCase();
+    },
+
+    buildCategoryTree() {
+      // Create a map of categories by ID for quick lookup
+      const categoryMap = {};
+      this.categories.forEach(category => {
+        // Clone the category to avoid modifying the original
+        categoryMap[category.id] = { ...category, children: [] };
+      });
+
+      // Build the tree structure
+      const rootCategories = [];
+      this.categories.forEach(category => {
+        // Check if the category has a parent
+        if (category.parent && category.parent.id && categoryMap[category.parent.id]) {
+          // Add this category as a child of its parent
+          categoryMap[category.parent.id].children.push(categoryMap[category.id]);
+        } else {
+          // This is a root category
+          rootCategories.push(categoryMap[category.id]);
+        }
+      });
+
+      // Sort root categories and their children by name
+      this.sortCategoriesByName(rootCategories);
+
+      // Update the categoryTree
+      this.categoryTree = rootCategories;
+    },
+
+    sortCategoriesByName(categories) {
+      // Sort the categories by name
+      categories.sort((a, b) => {
+        const nameA = this.getCategoryName(a).toLowerCase();
+        const nameB = this.getCategoryName(b).toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+
+      // Sort children recursively
+      categories.forEach(category => {
+        if (category.children && category.children.length > 0) {
+          this.sortCategoriesByName(category.children);
+        }
+      });
+    },
+
+    searchProducts() {
+      if (!this.searchQuery.trim()) {
+        // If search query is empty, show all products or products from selected category
+        if (this.selectedCategory) {
+          this.selectCategory(this.selectedCategory);
+        } else {
+          this.filteredProducts = this.allProducts;
+        }
+        return;
+      }
+
+      const query = this.searchQuery.toLowerCase().trim();
+
+      // Filter products based on search query
+      let productsToSearch = this.selectedCategory ? 
+        this.filteredProducts : this.allProducts;
+
+      this.filteredProducts = productsToSearch.filter(product => {
+        const name = this.getProductName(product).toLowerCase();
+        const description = this.getProductDescription(product).toLowerCase();
+
+        // Search in name and description
+        return name.includes(query) || description.includes(query);
+      });
+    },
+
+    viewProductDetails(product) {
+      if (!product || !product.masterVariant || !product.masterVariant.sku) {
+        console.error('Product does not have a valid SKU');
+        return;
+      }
+
+      const sku = product.masterVariant.sku;
+
+      // Navigate to product detail page with SKU as query parameter
+      window.location.href = `?sku=${encodeURIComponent(sku)}`;
+    },
+
+    getProductSku(product) {
+      if (!product || !product.masterVariant) return null;
+      return product.masterVariant.sku;
     }
   }
 }
@@ -380,6 +503,20 @@ export default {
   opacity: 0.9;
 }
 
+.category-tree-item {
+  margin-bottom: 0.5rem;
+}
+
+.category-children {
+  margin-left: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.child-category {
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+}
+
 /* Main Content Styles */
 .main-content {
   flex: 1;
@@ -387,6 +524,25 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   padding: 2rem;
+}
+
+.search-container {
+  margin-bottom: 1.5rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
 .content-header {
@@ -421,6 +577,7 @@ export default {
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   background: white;
+  cursor: pointer;
 }
 
 .product-card:hover {
