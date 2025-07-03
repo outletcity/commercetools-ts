@@ -1,3 +1,4 @@
+
 <template>
   <div class="category-product-view">
     <div class="container">
@@ -23,14 +24,14 @@
         <!-- Categories Tree -->
         <div v-else-if="categoryTree.length > 0" class="categories-list">
           <div
-            v-for="category in categoryTree"
-            :key="category.id"
-            class="category-tree-item"
+              v-for="category in categoryTree"
+              :key="category.id"
+              class="category-tree-item"
           >
-            <div 
-              class="category-item"
-              :class="{ active: selectedCategory?.id === category.id }"
-              @click="selectCategory(category)"
+            <div
+                class="category-item"
+                :class="{ active: selectedCategory?.id === category.id }"
+                @click="selectCategory(category)"
             >
               <span class="category-name">{{ getCategoryName(category) }}</span>
               <span class="product-count">({{ getCategoryProductCount(category.id) }})</span>
@@ -39,11 +40,11 @@
             <!-- Render children recursively -->
             <div v-if="category.children && category.children.length > 0" class="category-children">
               <div
-                v-for="child in category.children"
-                :key="child.id"
-                class="category-item child-category"
-                :class="{ active: selectedCategory?.id === child.id }"
-                @click.stop="selectCategory(child)"
+                  v-for="child in category.children"
+                  :key="child.id"
+                  class="category-item child-category"
+                  :class="{ active: selectedCategory?.id === child.id }"
+                  @click.stop="selectCategory(child)"
               >
                 <span class="category-name">{{ getCategoryName(child) }}</span>
                 <span class="product-count">({{ getCategoryProductCount(child.id) }})</span>
@@ -62,12 +63,12 @@
       <div class="main-content">
         <!-- Search Bar -->
         <div class="search-container">
-          <input 
-            type="text" 
-            v-model="searchQuery" 
-            placeholder="Search products..." 
-            class="search-input"
-            @input="searchProducts"
+          <input
+              type="text"
+              v-model="searchQuery"
+              placeholder="Search products..."
+              class="search-input"
+              @input="searchProducts"
           />
         </div>
 
@@ -94,8 +95,16 @@
               @click="viewProductDetails(product)"
           >
             <div class="product-image">
-              <!-- Placeholder image - replace with actual product images if available -->
-              <div class="image-placeholder">
+              <!-- Product Image with proper aspect ratio -->
+              <img
+                  v-if="getProductImageUrl(product)"
+                  :src="getProductImageUrl(product)"
+                  :alt="getProductName(product)"
+                  class="product-img"
+                  @error="handleImageError"
+              />
+              <!-- Fallback placeholder -->
+              <div v-else class="image-placeholder">
                 {{ getProductInitials(product) }}
               </div>
             </div>
@@ -105,6 +114,24 @@
               <p class="product-description" v-if="getProductDescription(product)">
                 {{ getProductDescription(product) }}
               </p>
+
+              <!-- Available Variants (Sizes) -->
+              <div class="product-variants" v-if="getProductVariants(product).length > 0">
+                <h4 class="variants-title">Available Sizes:</h4>
+                <div class="variants-list">
+                  <span
+                      v-for="variant in getProductVariants(product)"
+                      :key="variant.id"
+                      class="variant-tag"
+                      :class="{ 'out-of-stock': !isVariantAvailable(variant) }"
+                  >
+                    {{ getVariantSize(variant) }}
+                    <span v-if="!isVariantAvailable(variant)" class="out-of-stock-label">
+                      (Out of Stock)
+                    </span>
+                  </span>
+                </div>
+              </div>
 
               <!-- Product Categories -->
               <div class="product-categories" v-if="product.categories && product.categories.length > 0">
@@ -335,6 +362,86 @@ export default {
       return name.split(' ').map(word => word.charAt(0)).join('').slice(0, 2).toUpperCase();
     },
 
+    // New method to get product image URL
+    getProductImageUrl(product) {
+      if (!product || !product.masterVariant) return null;
+
+      const images = product.masterVariant.images;
+      if (images && images.length > 0) {
+        return images[0].url;
+      }
+
+      return null;
+    },
+
+    // New method to get all product variants
+    getProductVariants(product) {
+      if (!product || !product.variants) return [];
+
+      // Include master variant and all other variants
+      const allVariants = [product.masterVariant, ...product.variants];
+      return allVariants.filter(variant => variant && variant.id);
+    },
+
+    // New method to get variant size
+    getVariantSize(variant) {
+      if (!variant || !variant.attributes) return 'N/A';
+
+      // Look for size attribute (common attribute names for sizes)
+      const sizeAttributes = ['size', 'Size', 'SIZE', 'groesse', 'Größe'];
+
+      for (const attrName of sizeAttributes) {
+        const sizeAttr = variant.attributes.find(attr => attr.name === attrName);
+        if (sizeAttr) {
+          // Handle different value types
+          if (typeof sizeAttr.value === 'string') {
+            return sizeAttr.value;
+          } else if (sizeAttr.value && sizeAttr.value.label) {
+            return sizeAttr.value.label;
+          } else if (sizeAttr.value && sizeAttr.value.key) {
+            return sizeAttr.value.key;
+          }
+        }
+      }
+
+      // If no size attribute found, try to get SKU or variant ID
+      return variant.sku || `Variant ${variant.id}`;
+    },
+
+    // New method to check if variant is available
+    isVariantAvailable(variant) {
+      if (!variant || !variant.availability) return true;
+
+      // Check if variant has availability info
+      const availability = variant.availability;
+
+      // Check if there's channel-specific availability
+      if (availability.channels) {
+        // Check if any channel has stock
+        return Object.values(availability.channels).some(channel =>
+            channel.availableQuantity > 0
+        );
+      }
+
+      // Check general availability
+      if (availability.availableQuantity !== undefined) {
+        return availability.availableQuantity > 0;
+      }
+
+      // Default to available if no availability info
+      return true;
+    },
+
+    // Error handler for failed image loads
+    handleImageError(event) {
+      // Hide the broken image and show placeholder
+      event.target.style.display = 'none';
+      const placeholder = event.target.parentElement.querySelector('.image-placeholder');
+      if (placeholder) {
+        placeholder.style.display = 'flex';
+      }
+    },
+
     buildCategoryTree() {
       // Create a map of categories by ID for quick lookup
       const categoryMap = {};
@@ -393,8 +500,8 @@ export default {
       const query = this.searchQuery.toLowerCase().trim();
 
       // Filter products based on search query
-      let productsToSearch = this.selectedCategory ? 
-        this.filteredProducts : this.allProducts;
+      let productsToSearch = this.selectedCategory ?
+          this.filteredProducts : this.allProducts;
 
       this.filteredProducts = productsToSearch.filter(product => {
         const name = this.getProductName(product).toLowerCase();
@@ -567,7 +674,7 @@ export default {
 /* Products Grid */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
 }
 
@@ -585,12 +692,30 @@ export default {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
+/* Updated Image Styles - Show full image */
 .product-image {
-  height: 200px;
+  height: 280px;
   background: #f8f9fa;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.product-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+  border-radius: 4px;
+}
+
+.product-card:hover .product-img {
+  transform: scale(1.02);
 }
 
 .image-placeholder {
@@ -623,6 +748,46 @@ export default {
   color: #6c757d;
   font-size: 0.875rem;
   line-height: 1.5;
+}
+
+/* Product Variants Styles */
+.product-variants {
+  margin-bottom: 1rem;
+}
+
+.variants-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.variants-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.variant-tag {
+  background: #e9ecef;
+  color: #495057;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.variant-tag.out-of-stock {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.out-of-stock-label {
+  font-size: 0.6rem;
+  opacity: 0.8;
 }
 
 .product-categories {
@@ -689,6 +854,11 @@ export default {
   .page-title {
     font-size: 1.5rem;
   }
+
+  .product-image {
+    height: 220px;
+    padding: 8px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -698,6 +868,20 @@ export default {
 
   .product-info {
     padding: 1rem;
+  }
+
+  .variants-list {
+    gap: 0.25rem;
+  }
+
+  .variant-tag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .product-image {
+    height: 200px;
+    padding: 6px;
   }
 }
 </style>
