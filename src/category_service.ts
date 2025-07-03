@@ -1,7 +1,8 @@
 import { apiRoot } from "./main";
+import { Category } from '@commercetools/platform-sdk';
 
 export class CategoryService {
-    
+
     constructor() {
         // No specific initialization needed for categories
     }
@@ -16,12 +17,12 @@ export class CategoryService {
     ) {
         try {
             console.log('Creating category...');
-            
+
             // Ensure name and slug are in the correct format
             const categoryName = typeof name === 'string' 
                 ? { en: name } 
                 : name;
-                
+
             const categorySlug = typeof slug === 'string' 
                 ? { en: slug } 
                 : slug;
@@ -86,10 +87,37 @@ export class CategoryService {
         }
     }
 
-    async getAllCategories() {
+    async getAllCategories(): Promise<Category[]> {
         try {
-            const categories = await apiRoot.categories().get().execute();
-            return categories.body.results;
+            // Fetch all categories with pagination
+            let offset = 0;
+            const limit = 500; // Fetch a large number of categories at once
+            let allCategories: Category[] = [];
+            let hasMore = true;
+
+            while (hasMore) {
+                const response = await apiRoot.categories().get({
+                    queryArgs: {
+                        limit: limit,
+                        offset: offset,
+                        // Expand references to get more data if needed
+                        expand: ['ancestors', 'parent']
+                    }
+                }).execute();
+
+                const categories = response.body.results;
+                allCategories = [...allCategories, ...categories];
+
+                // Check if there are more categories to fetch
+                if (categories.length < limit) {
+                    hasMore = false;
+                } else {
+                    offset += limit;
+                }
+            }
+
+            console.log(`Fetched ${allCategories.length} categories in total`);
+            return allCategories;
         } catch (error) {
             console.error('Error fetching all categories:', error);
             throw error;

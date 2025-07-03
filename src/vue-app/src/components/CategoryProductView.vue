@@ -16,6 +16,85 @@
           <span class="product-count">({{ totalProductsCount }})</span>
         </div>
 
+        <!-- Category Statistics Overview -->
+        <div v-if="categories.length > 0" class="category-overview">
+          <div class="overview-header">
+            <h3>Category Overview</h3>
+            <button
+                @click="showCategoryDetails = !showCategoryDetails"
+                class="toggle-details"
+                type="button"
+            >
+              {{ showCategoryDetails ? 'Hide Details' : 'Show Details' }}
+            </button>
+          </div>
+
+          <div class="overview-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total Categories:</span>
+              <span class="stat-value">{{ categories.length }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Root Categories:</span>
+              <span class="stat-value">{{ categoryTree.length }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Categories with Products:</span>
+              <span class="stat-value">{{ categoriesWithProducts }}</span>
+            </div>
+          </div>
+
+          <!-- Detailed Category List -->
+          <div v-if="showCategoryDetails" class="category-details">
+            <div class="category-filters">
+              <input
+                  type="text"
+                  v-model="categorySearchQuery"
+                  placeholder="Search categories..."
+                  class="category-search"
+              />
+              <select v-model="categoryFilter" class="category-filter-select">
+                <option value="all">All Categories</option>
+                <option value="root">Root Only</option>
+                <option value="withProducts">With Products</option>
+                <option value="withoutProducts">Without Products</option>
+              </select>
+            </div>
+
+            <div class="flat-category-list">
+              <div
+                  v-for="category in filteredCategoriesFlat"
+                  :key="category.id"
+                  class="flat-category-item"
+                  :class="{
+                  'active': selectedCategory?.id === category.id,
+                  'has-products': getCategoryProductCount(category.id) > 0,
+                  'is-root': !category.parent,
+                  'is-child': category.parent
+                }"
+                  @click="selectCategory(category)"
+              >
+                <div class="category-info">
+                  <span class="category-hierarchy">
+                    {{ getCategoryHierarchyPath(category) }}
+                  </span>
+                  <span class="category-name-flat">
+                    {{ getCategoryName(category) }}
+                  </span>
+                </div>
+                <div class="category-meta">
+                  <span class="category-type">
+                    {{ category.parent ? 'Child' : 'Root' }}
+                  </span>
+                  <span class="product-count-flat">
+                    ({{ getCategoryProductCount(category.id) }})
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Loading State -->
         <div v-if="categoriesLoading" class="loading">
           Loading categories...
@@ -23,39 +102,36 @@
 
         <!-- Categories Tree -->
         <div v-else-if="categoryTree.length > 0" class="categories-list">
-          <div
+          <h3 class="tree-title">Category Tree</h3>
+          <CategoryTreeItem
               v-for="category in categoryTree"
               :key="category.id"
-              class="category-tree-item"
-          >
-            <div
-                class="category-item"
-                :class="{ active: selectedCategory?.id === category.id }"
-                @click="selectCategory(category)"
-            >
-              <span class="category-name">{{ getCategoryName(category) }}</span>
-              <span class="product-count">({{ getCategoryProductCount(category.id) }})</span>
-            </div>
-
-            <!-- Render children recursively -->
-            <div v-if="category.children && category.children.length > 0" class="category-children">
-              <div
-                  v-for="child in category.children"
-                  :key="child.id"
-                  class="category-item child-category"
-                  :class="{ active: selectedCategory?.id === child.id }"
-                  @click.stop="selectCategory(child)"
-              >
-                <span class="category-name">{{ getCategoryName(child) }}</span>
-                <span class="product-count">({{ getCategoryProductCount(child.id) }})</span>
-              </div>
-            </div>
-          </div>
+              :category="category"
+              :selected-category="selectedCategory"
+              :category-product-counts="categoryProductCounts"
+              :all-categories="categories"
+              @select-category="selectCategory"
+          />
         </div>
 
         <!-- No Categories -->
         <div v-else class="no-categories">
           No categories found
+        </div>
+
+        <!-- Debug Info -->
+        <div v-if="showDebugInfo" class="debug-info">
+          <h4>Debug Info:</h4>
+          <p>Total categories: {{ categories.length }}</p>
+          <p>Root categories: {{ categoryTree.length }}</p>
+          <details>
+            <summary>Raw categories</summary>
+            <pre>{{ JSON.stringify(categories, null, 2) }}</pre>
+          </details>
+          <details>
+            <summary>Category tree</summary>
+            <pre>{{ JSON.stringify(categoryTree, null, 2) }}</pre>
+          </details>
         </div>
       </div>
 
@@ -70,6 +146,14 @@
               class="search-input"
               @input="searchProducts"
           />
+          <!-- Debug Toggle -->
+          <button
+              @click="showDebugInfo = !showDebugInfo"
+              class="debug-toggle"
+              type="button"
+          >
+            {{ showDebugInfo ? 'Hide' : 'Show' }} Debug
+          </button>
         </div>
 
         <div class="content-header">
@@ -79,6 +163,11 @@
           <p class="product-count-text">
             {{ filteredProducts.length }} product{{ filteredProducts.length !== 1 ? 's' : '' }} found
           </p>
+          <!-- Category Breadcrumb -->
+          <div v-if="selectedCategory" class="category-breadcrumb">
+            <span class="breadcrumb-label">Category Path:</span>
+            <span class="breadcrumb-path">{{ getCategoryHierarchyPath(selectedCategory) }}</span>
+          </div>
         </div>
 
         <!-- Loading State -->
@@ -162,8 +251,133 @@
 </template>
 
 <script>
+// Separate CategoryTreeItem component for Vue 3
+const CategoryTreeItem = {
+  name: 'CategoryTreeItem',
+  template: `
+    <div class="category-tree-item">
+      <!-- Category item -->
+      <div
+          :class="{
+          'category-item': true,
+          'active': isSelected,
+          'category-item-with-children': hasChildren,
+          'expanded': expanded
+        }"
+          @click="handleCategoryClick"
+      >
+        <!-- Toggle button for categories with children -->
+        <span
+            v-if="hasChildren"
+            class="category-toggle"
+            @click.stop="toggleExpand"
+        >
+          {{ expanded ? '−' : '+' }}
+        </span>
+
+        <span class="category-name">{{ getCategoryName(category) }}</span>
+        <span class="product-count">({{ getCategoryProductCount(category.id) }})</span>
+      </div>
+
+      <!-- Children (if any and expanded) -->
+      <div v-if="hasChildren && expanded" class="category-children">
+        <CategoryTreeItem
+            v-for="child in category.children"
+            :key="child.id"
+            :category="child"
+            :selected-category="selectedCategory"
+            :category-product-counts="categoryProductCounts"
+            :all-categories="allCategories"
+            @select-category="$emit('select-category', $event)"
+        />
+      </div>
+    </div>
+  `,
+  props: {
+    category: {
+      type: Object,
+      required: true
+    },
+    selectedCategory: {
+      type: Object,
+      default: null
+    },
+    categoryProductCounts: {
+      type: Object,
+      required: true
+    },
+    allCategories: {
+      type: Array,
+      default: () => []
+    }
+  },
+  emits: ['select-category'],
+  data() {
+    return {
+      expanded: false
+    };
+  },
+  computed: {
+    hasChildren() {
+      return this.category.children && this.category.children.length > 0;
+    },
+    isSelected() {
+      return this.selectedCategory?.id === this.category.id;
+    },
+    shouldAutoExpand() {
+      const isSelected = this.selectedCategory?.id === this.category.id;
+      const hasSelectedChild = this.hasChildren && this.category.children.some(child =>
+          child.id === this.selectedCategory?.id ||
+          (child.children && child.children.some(grandchild => grandchild.id === this.selectedCategory?.id))
+      );
+      return isSelected || hasSelectedChild;
+    }
+  },
+  watch: {
+    shouldAutoExpand: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal && !this.expanded) {
+          this.expanded = true;
+        }
+      }
+    }
+  },
+  methods: {
+    getCategoryName(category) {
+      if (!category) return '';
+
+      // Handle localized names
+      if (category.name && typeof category.name === 'object') {
+        return category.name.en || category.name[Object.keys(category.name)[0]] || 'Unnamed Category';
+      }
+
+      return category.name || 'Unnamed Category';
+    },
+    getCategoryProductCount(categoryId) {
+      return this.categoryProductCounts[categoryId] || 0;
+    },
+    handleCategoryClick() {
+      // When a category is selected, expand it to show its children
+      if (this.hasChildren) {
+        this.expanded = true;
+      }
+      this.$emit('select-category', this.category);
+    },
+    toggleExpand() {
+      // Toggle expanded state when the toggle button is clicked
+      if (this.hasChildren) {
+        this.expanded = !this.expanded;
+      }
+    }
+  }
+};
+
 export default {
   name: 'CategoryProductView',
+  components: {
+    CategoryTreeItem
+  },
   data() {
     return {
       categories: [],
@@ -174,13 +388,58 @@ export default {
       categoriesLoading: false,
       productsLoading: false,
       categoryProductCounts: {},
-      searchQuery: ''
+      searchQuery: '',
+      showDebugInfo: false,
+      showCategoryDetails: false,
+      categorySearchQuery: '',
+      categoryFilter: 'all'
     }
   },
 
   computed: {
     totalProductsCount() {
       return this.allProducts.length;
+    },
+
+    categoriesWithProducts() {
+      return Object.values(this.categoryProductCounts).filter(count => count > 0).length;
+    },
+
+    filteredCategoriesFlat() {
+      let filtered = [...this.categories];
+
+      // Apply search filter
+      if (this.categorySearchQuery.trim()) {
+        const query = this.categorySearchQuery.toLowerCase().trim();
+        filtered = filtered.filter(category => {
+          const name = this.getCategoryName(category).toLowerCase();
+          const path = this.getCategoryHierarchyPath(category).toLowerCase();
+          return name.includes(query) || path.includes(query);
+        });
+      }
+
+      // Apply category filter
+      switch (this.categoryFilter) {
+        case 'root':
+          filtered = filtered.filter(category => !category.parent);
+          break;
+        case 'withProducts':
+          filtered = filtered.filter(category => this.getCategoryProductCount(category.id) > 0);
+          break;
+        case 'withoutProducts':
+          filtered = filtered.filter(category => this.getCategoryProductCount(category.id) === 0);
+          break;
+        default:
+          // 'all' - no additional filtering
+          break;
+      }
+
+      // Sort by hierarchy path for better organization
+      return filtered.sort((a, b) => {
+        const pathA = this.getCategoryHierarchyPath(a);
+        const pathB = this.getCategoryHierarchyPath(b);
+        return pathA.localeCompare(pathB);
+      });
     }
   },
 
@@ -191,6 +450,27 @@ export default {
   },
 
   methods: {
+    getCategoryHierarchyPath(category) {
+      if (!category) return '';
+
+      const path = [];
+      let current = category;
+
+      // Build path from current category up to root
+      while (current) {
+        path.unshift(this.getCategoryName(current));
+
+        // Find parent category
+        if (current.parent && current.parent.id) {
+          current = this.categories.find(cat => cat.id === current.parent.id);
+        } else {
+          current = null;
+        }
+      }
+
+      return path.join(' > ');
+    },
+
     async loadCategories() {
       this.categoriesLoading = true;
       try {
@@ -245,18 +525,27 @@ export default {
       this.categoryProductCounts = {};
 
       // Count products for each category
-      for (const category of this.categories) {
+      const fetchCategoryProductCount = async (categoryId) => {
         try {
-          const response = await fetch(`/api/products/category/${category.id}`);
+          const response = await fetch(`/api/products/category/${categoryId}`);
           if (response.ok) {
             const products = await response.json();
-            this.categoryProductCounts[category.id] = products.length;
+            this.categoryProductCounts[categoryId] = products.length;
+            return products.length;
           }
+          return 0;
         } catch (error) {
-          console.error(`Error loading product count for category ${category.id}:`, error);
-          this.categoryProductCounts[category.id] = 0;
+          console.error(`Error loading product count for category ${categoryId}:`, error);
+          this.categoryProductCounts[categoryId] = 0;
+          return 0;
         }
-      }
+      };
+
+      // Process all categories including nested ones
+      const promises = this.categories.map(category => fetchCategoryProductCount(category.id));
+      await Promise.all(promises);
+
+      console.log('Product counts loaded for all categories');
     },
 
     async selectCategory(category) {
@@ -443,34 +732,69 @@ export default {
     },
 
     buildCategoryTree() {
+      console.log('Building category tree from categories:', this.categories);
+
+      if (!this.categories || this.categories.length === 0) {
+        console.log('No categories to build tree from');
+        this.categoryTree = [];
+        return;
+      }
+
       // Create a map of categories by ID for quick lookup
       const categoryMap = {};
       this.categories.forEach(category => {
         // Clone the category to avoid modifying the original
-        categoryMap[category.id] = { ...category, children: [] };
+        categoryMap[category.id] = {
+          ...category,
+          children: [],
+          // Keep original reference for debugging
+          _original: category
+        };
       });
+
+      console.log('Category map created:', categoryMap);
 
       // Build the tree structure
       const rootCategories = [];
+
       this.categories.forEach(category => {
+        console.log(`Processing category: ${this.getCategoryName(category)} (ID: ${category.id})`);
+
         // Check if the category has a parent
-        if (category.parent && category.parent.id && categoryMap[category.parent.id]) {
-          // Add this category as a child of its parent
-          categoryMap[category.parent.id].children.push(categoryMap[category.id]);
+        if (category.parent && category.parent.id) {
+          console.log(`  - Has parent: ${category.parent.id}`);
+
+          // Check if parent exists in our category map
+          if (categoryMap[category.parent.id]) {
+            console.log(`  - Adding as child to parent ${category.parent.id}`);
+            // Add this category as a child of its parent
+            categoryMap[category.parent.id].children.push(categoryMap[category.id]);
+          } else {
+            console.log(`  - Parent ${category.parent.id} not found in map, treating as root`);
+            // Parent not found, treat as root category
+            rootCategories.push(categoryMap[category.id]);
+          }
         } else {
+          console.log(`  - No parent, treating as root category`);
           // This is a root category
           rootCategories.push(categoryMap[category.id]);
         }
       });
+
+      console.log('Root categories found:', rootCategories);
 
       // Sort root categories and their children by name
       this.sortCategoriesByName(rootCategories);
 
       // Update the categoryTree
       this.categoryTree = rootCategories;
+
+      console.log('Final category tree:', this.categoryTree);
     },
 
     sortCategoriesByName(categories) {
+      if (!categories || categories.length === 0) return;
+
       // Sort the categories by name
       categories.sort((a, b) => {
         const nameA = this.getCategoryName(a).toLowerCase();
@@ -548,7 +872,7 @@ export default {
 
 /* Sidebar Styles */
 .sidebar {
-  width: 300px;
+  width: 350px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -565,6 +889,187 @@ export default {
   color: #333;
   border-bottom: 2px solid #e9ecef;
   padding-bottom: 0.5rem;
+}
+
+/* Category Overview Styles */
+.category-overview {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.overview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.overview-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  color: #495057;
+}
+
+.toggle-details {
+  padding: 0.25rem 0.75rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.toggle-details:hover {
+  background: #0056b3;
+}
+
+.overview-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-label {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: #495057;
+}
+
+/* Category Details Styles */
+.category-details {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #dee2e6;
+}
+
+.category-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.category-search {
+  padding: 0.5rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.category-filter-select {
+  padding: 0.5rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  background: white;
+}
+
+.flat-category-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+}
+
+.flat-category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 1px solid #f1f3f4;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.flat-category-item:hover {
+  background-color: #f8f9fa;
+}
+
+.flat-category-item.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.flat-category-item.is-root {
+  font-weight: 600;
+}
+
+.flat-category-item.is-child {
+  font-style: italic;
+}
+
+.flat-category-item.has-products {
+  border-left: 3px solid #28a745;
+}
+
+.category-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.category-hierarchy {
+  font-size: 0.75rem;
+  color: #6c757d;
+  opacity: 0.8;
+}
+
+.flat-category-item.active .category-hierarchy {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.category-name-flat {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.category-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.category-type {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 3px;
+  background: #e9ecef;
+  color: #495057;
+}
+
+.flat-category-item.active .category-type {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.product-count-flat {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Tree Title */
+.tree-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  color: #495057;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9ecef;
 }
 
 .categories-list {
@@ -617,11 +1122,113 @@ export default {
 .category-children {
   margin-left: 1.5rem;
   margin-top: 0.5rem;
+  border-left: 1px dashed #dee2e6;
+  padding-left: 0.5rem;
+}
+
+.category-children .category-children {
+  margin-left: 1rem;
 }
 
 .child-category {
   font-size: 0.9rem;
   padding: 0.5rem 0.75rem;
+}
+
+.category-tree-item {
+  position: relative;
+}
+
+.category-tree-item .category-item {
+  margin-bottom: 0.25rem;
+}
+
+/* Add a visual indicator for expandable categories */
+.category-item {
+  position: relative;
+}
+
+/* Category toggle button styles */
+.category-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: #6c757d;
+  transition: transform 0.2s ease;
+}
+
+.category-item.active .category-toggle {
+  color: white;
+}
+
+.category-item.expanded .category-toggle {
+  transform: rotate(0deg);
+}
+
+/* Add a subtle background to the toggle on hover */
+.category-toggle:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.category-item.active .category-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Debug Info Styles */
+.debug-info {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+  font-size: 0.875rem;
+}
+
+.debug-info h4 {
+  margin: 0 0 1rem 0;
+  color: #495057;
+}
+
+.debug-info details {
+  margin: 0.5rem 0;
+}
+
+.debug-info summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: #007bff;
+}
+
+.debug-info pre {
+  background: white;
+  padding: 0.5rem;
+  border-radius: 3px;
+  overflow-x: auto;
+  font-size: 0.75rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.debug-toggle {
+  margin-left: 1rem;
+  padding: 0.5rem 1rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.debug-toggle:hover {
+  background: #0056b3;
 }
 
 /* Main Content Styles */
@@ -635,10 +1242,13 @@ export default {
 
 .search-container {
   margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .search-input {
-  width: 100%;
+  flex: 1;
   padding: 0.75rem 1rem;
   border: 1px solid #dee2e6;
   border-radius: 4px;
@@ -666,9 +1276,25 @@ export default {
 }
 
 .product-count-text {
-  margin: 0;
+  margin: 0 0 0.5rem 0;
   color: #6c757d;
   font-size: 1rem;
+}
+
+.category-breadcrumb {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.breadcrumb-label {
+  color: #6c757d;
+  margin-right: 0.5rem;
+}
+
+.breadcrumb-path {
+  color: #007bff;
+  font-weight: 500;
 }
 
 /* Products Grid */
@@ -859,6 +1485,20 @@ export default {
     height: 220px;
     padding: 8px;
   }
+
+  .search-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .debug-toggle {
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+
+  .category-filters {
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 480px) {
@@ -882,6 +1522,12 @@ export default {
   .product-image {
     height: 200px;
     padding: 6px;
+  }
+
+  .overview-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
   }
 }
 </style>
